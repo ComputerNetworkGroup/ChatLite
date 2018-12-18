@@ -23,7 +23,7 @@
 
 #define MAXLENGTH 2048
 
- namespace MT
+ namespace mt
  {
 	 // client  send 
 	const unsigned char login = 0x11;
@@ -36,13 +36,13 @@
 	const unsigned char resSend = 0X72;
  };
 
-namespace SBT
+namespace sbt
 {
 	const unsigned char request = 0x00 ;
 	const unsigned char success = 0x01 ;
 	const unsigned char changepwd = 0x02 ;
 
-	const unsigned char txt = 0x01;
+	const unsigned char file = 0x01;
 	const unsigned char jpg = 0x02;
 	const unsigned char gif = 0x03 ;
 
@@ -51,8 +51,11 @@ namespace SBT
 	const unsigned char repeatout = 0x04 ;
 	const unsigned char repeaton = 0x05 ;
 
-	const unsigned char idNotExit = 0xfe;
+	const unsigned char idNotExist = 0xfe;
 	const unsigned char idOffline = 0xfd;
+
+	const unsigned char winTheme = 0x01 ;
+	const unsigned char friList = 0x02 ;
 };
 
 struct packetHeader{
