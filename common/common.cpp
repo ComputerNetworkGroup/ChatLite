@@ -1,5 +1,11 @@
 #include "common.h"
 
+int socketSend (int cfd , const msgPacket & packet);
+
+int socketRecv(int cfd , msgPackt & packet);
+
+
+
 int getPacketLen(const msgPacket & packet)
 {
 	return noths(packet.header.length);
@@ -15,12 +21,84 @@ unsigned char getSubType (const mysPacket & packet )
 	return packet.header.subType;
 }
 
+int getFileSize(const char * filePath)
+{
+	FILE * file = fopen("233.jpg","r");
+	int size ;
+	if(file)
+	{
+		fseek(file,0,SEEK_END);
+		size = ftell(file);
+		fclose(file);
+		return size ;
+	}
+	
+	return -1 ;
+}
 
-int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short length)
+int getFileName( const char * filePath)
+{
+	int i ;
+	for(i=strlen(filePath);i>=0;i--)
+		if(filePath[i]=='\\'||filePath[i]=='/')
+			break;
+	return i+1;
+
+}
+
+int sndFileKind(int cfd , const char * id , unsigned char subType, const void * filepath)
+{
+
+	Packet p ;
+
+	// send fileHeader 
+	fillPacketHeader(p.header,mt::sndFileHead, subType ,sizeof(fileHeader));
+	fileHeader * headp = (fileHeader *)&p.msg;
+	int fileSize = getFileSize(filepath);
+	if(fileSize <0)
+		return -1 ;
+	
+	strcpy(headp->friName,id);
+	strcpy(headp->fileId,filepath+getFileName(filepath));
+
+	int fileId ; 
+	// TODO    ¼ÆËãidÖµ
+	int packNum = fileSize / MAXLENGTH + (fileSize % MAXLENGTH)!=0
+	headp->packNum =  htonl(packNum);
+
+	socketSend(cfd,p);
+	
+	// send fileData 
+
+	fillPacketHeader(p.header,mt::sndFile,sbt::myDefault,sizeof(fileData));
+
+	FILE * filep = fopen(filepath , "r");
+	fileData * datap = (fileData *)&p.msg ; 
+
+	strcpy(datap->friName , id );
+	datap->fileId = htonl(fileId) ; 
+	datap->count = htonl(0) ;
+
+
+	for(int i =0 ; i< packNum ; i++)
+	{
+		fread(datap->data,MAXLENGTH,1,filep);
+		if(i==packNum-1 && (fileSize % MAXLENGTH))
+			p.header.length = htonl(fileSize % MAXLENGTH )
+		datap->count = htonl(i);
+		socketSend(cfd , p);
+	}
+
+	return 0;
+
+}
+
+
+int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short msgLen)
 {
 	header.mainType = mainType ;
 	header.subType = resType;
-	header.length = htons(length);
+	header.length = htons(length+32);
 }
 
 
@@ -84,8 +162,17 @@ int sndLogin(int cfd , const char * username , const char * passwd )
 	if(ulen >32 || plen >32)
 		return -1 ;
 	
+	Packet p ;
+	
+	fillPacketHeader(p.header,mt::login,sbt::request , sizeof(loginData));
 
-	//TODO
+	loginData * datap = (loginData *) p.msg ;
+
+	strcpy(datap->username,username);
+	strcpy(datap->passwd, passwd);
+
+	return socketSend ( cfd , p);
+
 }
 
 
@@ -93,39 +180,78 @@ int sndLogin(int cfd , const char * username , const char * passwd )
 
 int clientRecv(int cfd , msgPacket & packet )
 {
+	return socketRecv (cfd , packet );
+}
+
+int sndText(int cfd , const char * ids  , int idNum  , const char * text )
+{
+	Packet p ;
+	
+	int idLen = idNum * 32 ; 
+	memcpy(p.msg , ids ,idLen);
+
+	int textLen = strlen(text);
+	
+	memcpy(p.msg + idLen ,  text , textLen );
+
+	fillPacketHeader(p.header, mt::sndTxt, (unsigned char) idNum , idLen + textLen );
+
+	socketSend(cfd, p);
+
+	return 0 ;
+}
+
+int sndJPG (int cfd , const char * id , const void * jpgpath )
+{
+
+	return sndFileKind(cfd, id , sbt::jpg , jpgpath);
 
 }
 
-int sndText(int cfd , const char * id , const char * text )
+int sndGIF(int cfd , const char * id , const void * gifpath)
 {
+
+	return sndFileKind(cfd, id , sbt::gif , gifpath);
 
 }
 
-int sndJPG (int cfd , const char * id , const void * jpg , int size )
+int sndFile (int cfd , const char * id , const void * filepath)
 {
 
+	return sndFileKind (cfd , id , sbt::file , filepath);
 }
 
-int sndGIF(int cfd , const char * id , const void * gif , int size )
-{
 
+int firstChangePwd(int cfd , const char * newPwd )
+{
+	Packet p ;
+	int msgLen = strlen(newPwd);
+	
+	strcpy(p.msg,newPwd);
+	
+	fillPacketHeader(p,mt::login,sbt::changepwd,msgLen);
+	
+	return socketSend(cfd, p);
 }
 
 // server 
 
 int serverRecv(int cfd , msgPacket & packet)
 {
-
+	return socketRecv(cfd , packet);
 }
 
 int serverSend (int cfd , msgPacket & packet )
 {
-
+	return socketSend (cfd , packet );
 }
 
 int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype )
 {
+	Packet p ;
+	fillPacketHeader(p.header,maintype, subtype, 0 );
 
+	return socketSend(cfd , p);
 }
 
 

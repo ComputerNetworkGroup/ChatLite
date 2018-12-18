@@ -23,7 +23,7 @@
 
 #define MAXLENGTH 2048
 
- namespace mt
+ namespace MT
  {
 	 // client  send 
 	const unsigned char login = 0x11;
@@ -36,8 +36,10 @@
 	const unsigned char resSend = 0X72;
  };
 
-namespace sbt
+namespace SBT
 {
+	const unsigned char myDefault = 0x00 ;
+
 	const unsigned char request = 0x00 ;
 	const unsigned char success = 0x01 ;
 	const unsigned char changepwd = 0x02 ;
@@ -51,11 +53,8 @@ namespace sbt
 	const unsigned char repeatout = 0x04 ;
 	const unsigned char repeaton = 0x05 ;
 
-	const unsigned char idNotExist = 0xfe;
+	const unsigned char idNotExit = 0xfe;
 	const unsigned char idOffline = 0xfd;
-
-	const unsigned char winTheme = 0x01 ;
-	const unsigned char friList = 0x02 ;
 };
 
 struct packetHeader{
@@ -69,11 +68,31 @@ struct msgPacket{
 	char msg[MAXLENGTH+1024];
 };
 
+//  以下是几种消息报文的格式
+
+//  file 类型
 struct fileData{
+	char friName[32];
 	int fileId ;
 	int count ;
 	char data[MAXLENGTH];
 };
+
+//  传输文件类型的数据 ，第一个包是这个格式  
+struct fileHeader 
+{
+	char friName [32]; 
+	char fileName [32];
+	int  fileId ;
+	int  packNum ;
+}
+
+//  认证登录
+struct loginData{
+	char username [32];
+	char passwd [32];
+}
+
 
 
 int getPacketLen(const msgPacket & packet);
@@ -83,12 +102,15 @@ unsigned char getMainType (const msgPacket & packet);
 unsigned char getSubType (const mysPacket & packet );
 
 
-int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short length);
+int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short msgLen);
+
+int fillId (Packet & p  , const char * id );
 
 int socketSend (int cfd , const msgPacket & packet);
 
 int socketRecv(int cfd , msgPackt & packet);
 
+int getFileSize(const char * filePath);
 
 //   clinet   以下所有的形参int cfd 都是client端自己的socket
 
