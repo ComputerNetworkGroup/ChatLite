@@ -23,6 +23,8 @@
 
 using namespace std ;
 #define MAXLENGTH 2048
+#define MAXNAMELEN 32
+#define MAXPASSWDLEN 32
 
  namespace mt
  {
@@ -67,32 +69,62 @@ struct packetHeader{
 struct Packet{
 	packetHeader header ;
 	char msg[MAXLENGTH+1024];
+
+	bool isMainType( unsigned char maintp)
+	{
+		return header.mainType == maintp ;
+	}
+
+	bool isSubType (unsigned char subtp)
+	{
+		return header.subType == subtp ;
+	}
+
+	bool isType(unsigned char maintp , unsigned char subtp )
+	{
+		return header.mainType==maintp && header.subType == subtp ;
+	}
+
+	int getLen()
+	{
+		return ntohs(header.length);
+	}
+
+
+
 };
 
 //  以下是几种消息报文的格式 可以将msg强制类型转换 如 fileData * datap = (fileData *) msg ;  
 
+//  传输文件类型的数据 ，第一个包是这个格式  
+struct fileHeader 
+{
+	char friName [MAXNAMELEN]; 
+	char fileName [MAXNAMELEN];
+	int  fileId ;
+	int  packNum ;
+};
+
 //  file 类型
 struct fileData{
-	char friName[32];
+	char friName[MAXNAMELEN];
 	int fileId ;
 	int count ;
 	char data[MAXLENGTH];
 };
 
-//  传输文件类型的数据 ，第一个包是这个格式  
-struct fileHeader 
-{
-	char friName [32]; 
-	char fileName [32];
-	int  fileId ;
-	int  packNum ;
-};
 
 //  认证登录
 struct loginData{
-	char username [32];
-	char passwd [32];
+	char username [MAXNAMELEN];
+	char passwd [MAXPASSWDLEN];
 };
+
+struct changePwdData {
+	char newPasswd [MAXPASSWDLEN];
+};
+
+
 
 
 
@@ -144,4 +176,6 @@ int serverSend (int cfd ,const Packet & packet );
 //server 发送回应（只有报头信息，没有msg）
 int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype );
 
+//   将收到的 txt 包 解包（附上发送者的用户名）
+int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId );
 

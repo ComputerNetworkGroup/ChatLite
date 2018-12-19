@@ -11,19 +11,10 @@ int getPacketLen(const Packet & packet)
 	return ntohs(packet.header.length);
 }
 
-unsigned char getMainType (const Packet & packet)
-{
-	return packet.header.mainType;
-}
-
-unsigned char getSubType (const Packet & packet )
-{
-	return packet.header.subType;
-}
 
 int getFileSize(const char * filePath)
 {
-	FILE * file = fopen("233.jpg","r");
+	FILE * file = fopen(filePath,"r");
 	int size ;
 	if(file)
 	{
@@ -83,8 +74,11 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 	for(int i =0 ; i< packNum ; i++)
 	{
 		fread(datap->data,MAXLENGTH,1,filep);
+
+		//  TEST 
 		if(i==packNum-1 && (fileSize % MAXLENGTH))
-			p.header.length = htonl(fileSize % MAXLENGTH );
+			p.header.length = htonl(fileSize % MAXLENGTH + 40 );
+		
 		datap->count = htonl(i);
 		socketSend(cfd , p);
 	}
@@ -93,6 +87,43 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 
 }
 
+
+int alterTxtPack( Packet &  desPack , Packet & srcPack , const char * srcId )
+{
+	int idNum = (int )srcPack.header.subType ;
+	int idLen = idNum * MAXNAMELEN ;
+	
+	int txtLen = getPacketLen(srcPack) - idLen ;
+	
+	strcpy (desPack.msg , srcId );
+	strcpy(desPack.msg+MAXNAMELEN , srcPack.msg + idLen);
+
+	fillPacketHeader(desPack.header,srcPack.header.mainType,srcPack.header.subType,txtLen +MAXNAMELEN );
+
+	return 0;
+}
+
+int alterFileHeaderPack(Packet & desPack , Packet & srcPack , const char * srcId )
+{
+	memcpy( &desPack , & srcPack , sizeof(desPack));
+	
+	fileHeader * fhp = (fileHeader *) desPack.msg;
+	strcpy(fhp->friName , srcId );
+
+	return 0;
+}
+
+int alterFileDataPack (Packet & desPack , Packet & srcPack , const char * srcId )
+{
+	memcpy( &desPack , & srcPack , sizeof(desPack));
+	
+	fileData * fdp = (fileData *) desPack.msg;
+	strcpy(fdp->friName , srcId );
+
+	return 0;
+}
+
+/////////////////////////////////////////////////////////////////////////////
 
 int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short msgLen)
 {
@@ -252,6 +283,21 @@ int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype )
 	fillPacketHeader(p.header,maintype, subtype, 0 );
 
 	return socketSend(cfd , p);
+}
+
+
+int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId )
+{
+	if(srcPack.isMainType(mt::sndTxt))
+		alterTxtPack(desPack , srcPack , srcId );
+	else if (srcPack.isMainType(mt::sndFileHead))
+		alterFileHeaderPack(desPack , srcPack , srcId );
+	else if (srcPack.isMainType(mt::sndFile))
+		alterFileDataPack(desPack , srcPack , srcId );
+	else 
+		return -1 ;  //不需要转发
+	
+	return 0 ;
 }
 
 
