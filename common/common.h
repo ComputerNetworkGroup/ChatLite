@@ -69,7 +69,7 @@ struct Packet{
 	char msg[MAXLENGTH+1024];
 };
 
-//  以下是几种消息报文的格式
+//  以下是几种消息报文的格式 可以将msg强制类型转换 如 fileData * datap = (fileData *) msg ;  
 
 //  file 类型
 struct fileData{
@@ -116,7 +116,7 @@ int clientRecv(int cfd , Packet & packet );
 int sndLogin(int cfd , const char * username , const char * passwd );
 
 //  client端发送文本消息， id为指定格式的用户名串  
-//  (格式未定)比如用户名串的类型为 "/name1/name2/name3/name4/end"  代表想要发送给name1-4
+//  用户名串的类型为 "/name1/name2/name3/name4/end"  代表想要发送给name1-4
 //  或 "/@all"   代表想要发送给所有组员
 int sndText(int cfd , const char * id , const char * text );
 

@@ -53,7 +53,7 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 
 	// send fileHeader 
 	fillPacketHeader(p.header,mt::sndFileHead, subType ,sizeof(fileHeader));
-	fileHeader * headp = (fileHeader *)&p.msg;
+	fileHeader * headp = (fileHeader *)p.msg;
 	int fileSize = getFileSize(filepath);
 	if(fileSize <0)
 		return -1 ;
@@ -73,7 +73,7 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 	fillPacketHeader(p.header,mt::sndFile,sbt::myDefault,sizeof(fileData));
 
 	FILE * filep = fopen(filepath , "r");
-	fileData * datap = (fileData *)&p.msg ; 
+	fileData * datap = (fileData *)p.msg ; 
 
 	strcpy(datap->friName , id );
 	datap->fileId = htonl(fileId) ; 
