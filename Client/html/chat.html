@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatLite</title>
+    <link rel="stylesheet" href="../css/bulma.min.css">
+    <link rel="stylesheet" href="../css/animate.min.css">
+    <link rel="stylesheet" href="../css/mystyle.css">
+    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.1/css/all.css" integrity="sha384-gfdkjb5BdAXd+lj+gudLWI+BXq4IuLW5IT+brZEZsLFm++aCMlF1V92rMkPaX4PP" crossorigin="anonymous">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+</head>
+
+<body style="background:linear-gradient(180deg,  hsl(204, 86%, 53%), white); height:100vh">
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="base.html">
+                <img src="../material/chaticon.svg" width="50" height="28">
+                <h1 style="font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; font-size:24px"><strong>ChatLite</strong></h1>
+            </a>
+        </div>
+        <div class="navbar-menu is-active">
+            <div class="navbar-end">
+                <div class="navbar-item" id="hello-msg"></div>
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" id="login">
+                            Log out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container is-fluid" style="margin-top:3vh">
+        <div class="notification">
+            <article class="media">
+                <figure class="media-left">
+                    <nav class="panel">
+                        <p class="panel-heading">
+                            <strong>Personl Information</strong>
+                        </p>
+                        <a class="panel-block" style="text-decoration:none">
+                            <span>Name: </span>
+                        </a>
+                        <a class="panel-block" style="text-decoration:none">
+                            <input class="button" type="button" name="set1" value="Personal Set" id="set1" style="margin-right:3px">
+                            <input class="button" type="button" name="set2" value="Char Record" id="set2" style="margin-left:3px">
+                        </a>
+                    </nav>
+                    <nav class="panel">
+                        <p class="panel-heading">
+                            <i class="far fa-user-circle"></i>
+                            <strong>Chat Group User</strong>
+                        </p>
+                        <div class="select is-multiple" style="width:33vh">
+                            <select multiple size="10" style="width:33vh">
+                                <option value="Argentina">ALL</option>
+                                <option value="Bolivia">A</option>
+                                <option value="Brazil">B</option>
+                                <option value="Chile">C</option>
+                                <option value="Colombia">D</option>
+                                <option value="Ecuador">E</option>
+                                <option value="Guyana">F</option>
+                                <option value="Paraguay">G</option>
+                                <option value="Peru">H</option>
+                                <option value="Suriname">I</option>
+                            </select>
+                        </div>
+                    </nav>
+                </figure>
+                <div class="media-content">
+                    <div class="field">
+                        <nav class="panel">
+                            <p class="panel-heading"><strong>Chat Content</strong></p>
+                            <div class="panel-block">
+                                <div id="chat-msg" style="position:relative; height:50vh; overflow-y:auto">
+                                </div>
+                            </div>
+                        </nav>
+                        <!-- <div class="message">
+                                <textarea class="textarea" placeholder="" rows="15" readonly></textarea>
+                            </div> -->
+                    </div>
+                    <div class="field">
+                        <p class="control">
+                            <textarea class="textarea" placeholder="Please enter your chat content..."></textarea>
+                        </p>
+                    </div>
+                    <nav class="level">
+                        <div class="level-left">
+                            <!-- <div class="level-item">
+                                    <a class="button is-info">Submit</a>
+                                </div> -->
+                        </div>
+                        <div class="level-right">
+                            <div class="file" style="margin-right:5px">
+                                <label class="file-label">
+                                    <input class="file-input" type="file" name="resume">
+                                    <span class="file-cta">
+                                        <span class="file-icon">
+                                            <i class="fas fa-upload"></i>
+                                        </span>
+                                        <span class="file-label">
+                                            Choose a file…
+                                        </span>
+                                    </span>
+                                </label>
+                            </div>
+                            <div class="level-item">
+                                <a class="button is-info">Submit</a>
+                            </div>
+                        </div>
+                    </nav>
+                </div>
+            </article>
+        </div>
+    </div>
+
+</body>
+
+</html>
