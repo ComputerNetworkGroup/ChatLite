@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ChatLite</title>
+    <link rel="stylesheet" href="../css/bulma.min.css">
+    <link rel="stylesheet" href="../css/animate.min.css">
+    <link rel="stylesheet" href="../css/mystyle.css">
+    <script defer src="https://use.fontawesome.com/releases/v5.0.6/js/all.js"></script>
+</head>
+
+<body>
+    <nav class="navbar" role="navigation" aria-label="main navigation">
+        <div class="navbar-brand">
+            <a class="navbar-item" href="base.html">
+                <img src="../material/chaticon.svg" width="50" height="28">
+                <h1 style="font-family:'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif; font-size:24px"><strong>ChatLite</strong></h1>
+            </a>
+        </div>
+        <div class="navbar-menu is-active">
+            <div class="navbar-end">
+                <div class="navbar-item" id="hello-msg"></div>
+                <div class="navbar-item">
+                    <div class="buttons">
+                        <a class="button is-light" id="login">
+                            Log out
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="columns is-mobile" style="margin-top:10vh">
+        <div class="column is-three-fifths is-offset-one-fifth">
+            <div style="text-align:center">
+                <h3><strong>Since it's your first time to log in, please change your password!</strong></h3>
+                <div style="margin-top:10px" id="error-msg"><span>&nbsp;</span></div>
+            </div>
+            <div style="margin:5% 25% 0 25%">
+                <div class="field">
+                    <label class="label">New Password</label>
+                    <div class="control">
+                        <input class="input" type="password" placeholder="New Password" id="np1">
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label class="label">Repeat New Password</label>
+                    <div class="control">
+                        <input class="input" type="password" placeholder="Repeat New Password" id="np2">
+                    </div>
+                </div>
+
+                <div style="text-align:center">
+                    <input class="button is-info" name="submit" value="Submit" id="change-pwd-btn">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <script src="../js/jQuery.js"></script>
+    <script src="../js/change_pwd.js"></script>
+
+</body>
+
+</html>
