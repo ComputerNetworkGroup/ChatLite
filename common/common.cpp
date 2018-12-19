@@ -1,22 +1,22 @@
 #include "common.h"
 
-int socketSend (int cfd , const msgPacket & packet);
+int socketSend (int cfd , const Packet & packet);
 
-int socketRecv(int cfd , msgPackt & packet);
+int socketRecv(int cfd , Packet & packet);
 
 
 
-int getPacketLen(const msgPacket & packet)
+int getPacketLen(const Packet & packet)
 {
-	return noths(packet.header.length);
+	return ntohs(packet.header.length);
 }
 
-unsigned char getMainType (const msgPacket & packet)
+unsigned char getMainType (const Packet & packet)
 {
 	return packet.header.mainType;
 }
 
-unsigned char getSubType (const mysPacket & packet )
+unsigned char getSubType (const Packet & packet )
 {
 	return packet.header.subType;
 }
@@ -46,7 +46,7 @@ int getFileName( const char * filePath)
 
 }
 
-int sndFileKind(int cfd , const char * id , unsigned char subType, const void * filepath)
+int sndFileKind(int cfd , const char * id , unsigned char subType, const char * filepath)
 {
 
 	Packet p ;
@@ -59,11 +59,11 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const void * 
 		return -1 ;
 	
 	strcpy(headp->friName,id);
-	strcpy(headp->fileId,filepath+getFileName(filepath));
-
+	strcpy(headp->fileName,filepath+getFileName(filepath));
 	int fileId ; 
 	// TODO    ¼ÆËãidÖµ
-	int packNum = fileSize / MAXLENGTH + (fileSize % MAXLENGTH)!=0
+	headp->fileId = fileId ;
+	int packNum = fileSize / MAXLENGTH + (fileSize % MAXLENGTH)!=0;
 	headp->packNum =  htonl(packNum);
 
 	socketSend(cfd,p);
@@ -84,7 +84,7 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const void * 
 	{
 		fread(datap->data,MAXLENGTH,1,filep);
 		if(i==packNum-1 && (fileSize % MAXLENGTH))
-			p.header.length = htonl(fileSize % MAXLENGTH )
+			p.header.length = htonl(fileSize % MAXLENGTH );
 		datap->count = htonl(i);
 		socketSend(cfd , p);
 	}
@@ -98,11 +98,11 @@ int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned c
 {
 	header.mainType = mainType ;
 	header.subType = resType;
-	header.length = htons(length+32);
+	header.length = htons(msgLen+32);
 }
 
 
-int socketSend (int cfd , const msgPacket & packet)
+int socketSend (int cfd , const Packet & packet)
 {
 	int msgLen = getPacketLen(packet);
 	int totalLen = 0;
@@ -110,7 +110,7 @@ int socketSend (int cfd , const msgPacket & packet)
 
 	while(totalLen <msgLen)
 	{
-		sndLen = send(cfd, &msgPacket+totalLen , msgLen - totalLen,0);
+		sndLen = send(cfd, &packet+totalLen , msgLen - totalLen,0);
 		if(sndLen <=0)
 		{
 			cerr<<"socket snd msg error !\n";
@@ -121,7 +121,7 @@ int socketSend (int cfd , const msgPacket & packet)
 	return 0;
 }
 
-int socketRecv(int cfd , msgPackt & packet)
+int socketRecv(int cfd , Packet & packet)
 {
 
 	int msgLen = 32;
@@ -178,7 +178,7 @@ int sndLogin(int cfd , const char * username , const char * passwd )
 
 //   clinet 
 
-int clientRecv(int cfd , msgPacket & packet )
+int clientRecv(int cfd , Packet & packet )
 {
 	return socketRecv (cfd , packet );
 }
@@ -201,21 +201,21 @@ int sndText(int cfd , const char * ids  , int idNum  , const char * text )
 	return 0 ;
 }
 
-int sndJPG (int cfd , const char * id , const void * jpgpath )
+int sndJPG (int cfd , const char * id , const char * jpgpath )
 {
 
 	return sndFileKind(cfd, id , sbt::jpg , jpgpath);
 
 }
 
-int sndGIF(int cfd , const char * id , const void * gifpath)
+int sndGIF(int cfd , const char * id , const char * gifpath)
 {
 
 	return sndFileKind(cfd, id , sbt::gif , gifpath);
 
 }
 
-int sndFile (int cfd , const char * id , const void * filepath)
+int sndFile (int cfd , const char * id , const char * filepath)
 {
 
 	return sndFileKind (cfd , id , sbt::file , filepath);
@@ -229,19 +229,19 @@ int firstChangePwd(int cfd , const char * newPwd )
 	
 	strcpy(p.msg,newPwd);
 	
-	fillPacketHeader(p,mt::login,sbt::changepwd,msgLen);
+	fillPacketHeader(p.header,mt::login,sbt::changepwd,msgLen);
 	
 	return socketSend(cfd, p);
 }
 
 // server 
 
-int serverRecv(int cfd , msgPacket & packet)
+int serverRecv(int cfd , Packet & packet)
 {
 	return socketRecv(cfd , packet);
 }
 
-int serverSend (int cfd , msgPacket & packet )
+int serverSend (int cfd , Packet & packet )
 {
 	return socketSend (cfd , packet );
 }

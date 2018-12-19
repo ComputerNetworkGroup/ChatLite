@@ -21,22 +21,23 @@
 #include <sys/prctl.h>//修改进程名
 #include <queue>
 
+using namespace std ;
 #define MAXLENGTH 2048
 
- namespace MT
+ namespace mt
  {
 	 // client  send 
 	const unsigned char login = 0x11;
 	const unsigned char sndFileHead = 0x12 ;
 	const unsigned char sndFile = 0x13;
-	const unsigned char sndTxt = 0X14
+	const unsigned char sndTxt = 0X14;
 
 	const unsigned char resLogin = 0x71;
 	const unsigned char resConf = 0X81 ;
 	const unsigned char resSend = 0X72;
  };
 
-namespace SBT
+namespace sbt
 {
 	const unsigned char myDefault = 0x00 ;
 
@@ -63,7 +64,7 @@ struct packetHeader{
 	unsigned short length;
 };
 
-struct msgPacket{
+struct Packet{
 	packetHeader header ;
 	char msg[MAXLENGTH+1024];
 };
@@ -85,37 +86,31 @@ struct fileHeader
 	char fileName [32];
 	int  fileId ;
 	int  packNum ;
-}
+};
 
 //  认证登录
 struct loginData{
 	char username [32];
 	char passwd [32];
-}
+};
 
 
 
-int getPacketLen(const msgPacket & packet);
+int getPacketLen(const Packet & packet);
 
-unsigned char getMainType (const msgPacket & packet);
+unsigned char getMainType (const Packet & packet);
 
-unsigned char getSubType (const mysPacket & packet );
+unsigned char getSubType (const Packet & packet );
 
 
 int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short msgLen);
-
-int fillId (Packet & p  , const char * id );
-
-int socketSend (int cfd , const msgPacket & packet);
-
-int socketRecv(int cfd , msgPackt & packet);
 
 int getFileSize(const char * filePath);
 
 //   clinet   以下所有的形参int cfd 都是client端自己的socket
 
 //  client端接收数据包  输入自己的cfd 和  写数据包的变量
-int clientRecv(int cfd , msgPacket & packet );
+int clientRecv(int cfd , Packet & packet );
 
 //  client端 发送登录请求  ， 输入用户名和密码
 int sndLogin(int cfd , const char * username , const char * passwd );
@@ -126,13 +121,13 @@ int sndLogin(int cfd , const char * username , const char * passwd );
 int sndText(int cfd , const char * id , const char * text );
 
 //  client端发送jpg  ， 传入指向图片文件的位置
-int sndJPG (int cfd , const char * id , const void * jpgpath );
+int sndJPG (int cfd , const char * id , const char * jpgpath );
 
 // client端发送gif  ， 形参意义同上
-int sndGIF(int cfd , const char * id , const void * gifpath);
+int sndGIF(int cfd , const char * id , const char * gifpath);
 
 //  向个人好友发送文件 ， 形参意义同上
-int sndFile (int cfd , const char * id , const void * filepath);
+int sndFile (int cfd , const char * id , const char * filepath);
 
 // client端 首次登录的更改密码  传入一个新的密码
 int firstChangePwd(int cfd , const char * newPwd );
@@ -141,10 +136,10 @@ int firstChangePwd(int cfd , const char * newPwd );
 // server 
 
 //server 接收packet
-int serverRecv(int cfd , msgPacket & packet);
+int serverRecv(int cfd , Packet & packet);
 
 //server 发送数据（转发消息）
-int serverSend (int cfd ,const msgPacket & packet );
+int serverSend (int cfd ,const Packet & packet );
 
 //server 发送回应（只有报头信息，没有msg）
 int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype );
