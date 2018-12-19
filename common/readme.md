@@ -1,9 +1,9 @@
 ## **client登录**
 行为|maintype|subtype|
 ---|:--:|---:
-请求登录|0x11(login)|0x00
-登录成功（通知server）|0x11(login)|0x01
-首次改密|0x11(login)|0x02
+请求登录|0x11(login)|0x00(request)
+登录成功（通知server）|0x11(login)|0x01(success)
+首次改密|0x11(login)|0x02(changepwd)
 
 
 ## **client向好友发送文本**
@@ -22,9 +22,9 @@
 
 行为|maintype|subtype|
 ---|:--:|:---:
-发送文件|0x12(sndFileHead)|0x01| 
-发送jpg|0x12(sndFileHead)|0x02
-发送gif|0x12(sndFileHead)|0x03
+发送文件|0x12(sndFileHead)|0x01(file)
+发送jpg|0x12(sndFileHead)|0x02(jpg)
+发送gif|0x12(sndFileHead)|0x03(gif)
 
 #### 报文内容
 * 32字节的char型 （用户名）
@@ -39,7 +39,7 @@
 
 行为|maintype|subtype|
 ---|:--:|:---:
-发送文件类型信息|0x13(sndFile)|0x00| 
+发送文件类型信息|0x13(sndFile)|0x00(myDefault)
 
 #### 报文内容
 * int类型 id （代表文件编号）
@@ -51,20 +51,20 @@
 
 行为|maintype|subtype|
 ---|:--:|:---:
-验证失败|0x71|0x00
-验证成功|0x71|0x01
-首次登录（强制改密）|0x71|0x02
-设置密码错误|0x71|0x03
-重复登录（强制下线）|0x71|0x04
-重复登录（新上线）|0x71|0x05
+验证失败|0x71(resLogin)|0x00(failed)
+验证成功|0x71(resLogin)|0x01(success)
+首次登录（强制改密）|0x71(resLogin)|0x02(changepwd)
+密码错误|0x71(resLogin)|0x03(pwderror)
+重复登录（强制下线）|0x71(resLogin)|0x04(repeatoff)
+重复登录（新上线）|0x71(resLogin)|0x05(repeaton)
 
 
 ## **server向client发送配置信息**
 
 行为|maintype|subtype|
 ---|:--:|:---:
-窗口主题|0x81|0x01
-好友列表|0x82|0x02
+窗口主题|0x81(resConf)|0x01
+好友列表|0x82(resConf)|0x02
 
 ## **server回应转发状态**
 
@@ -72,9 +72,9 @@
 
 行为|maintype|subtype|
 ---|:--:|:---:
-成功转发|0x72|0x01
-好友名称不存在|0x72|0xfe
-好友未上线|0x72|0xfd
+成功转发|0x72(resSend)|0x01(success)
+好友名称不存在|0x72(resSend)|0xfe(idNotExit)
+好友未上线|0x72(resSend)|0xfd(idOffline)
 
 
 
