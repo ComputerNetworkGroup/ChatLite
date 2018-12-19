@@ -1,19 +1,26 @@
-#include <fstream>
 #include <sys/prctl.h>
 #include "server.h"
+#include "../common/common.h"
 
-int ctr_clinet = 0;
 int max_fd, server_fd;
-int max_clientinfo;
-//ClientInfo clientinfos[SERVER_MAX_CONNECT];
-ClientInfo * clientinfos ; 
+//ClientInfo clientList[SERVER_MAX_CONNECT];
 fd_set read_fds, write_fds;
 
-int totalConnectCfd = 0;
-
-using namespace std;
 
 void killClient(ClientInfo &);
+
+void initClientSetup()
+{
+    // 客户端配置初始化
+    while(username， k = getFromDatabase()){
+        // 从数据库中得到一个名字 username, 及其序号 k
+        // (select DISTINCT name, id...)
+
+        mapIndex[one.name] = k      // username.to_string -> int
+        userOffline.push_back(k);
+        firstLog.push_back(true);   // 在第k个加入true 代表该用户尚未登陆过
+    }
+}
 
 void serverInit()
 {
@@ -21,7 +28,7 @@ void serverInit()
 		myExit();
 
 	max_fd = server_fd;
-	//memset(clientinfos, 0, sizeof(clientinfos));
+	//memset(clientList, 0, sizeof(clientList));
 	FD_ZERO(&read_fds);
 	FD_ZERO(&write_fds);
 	FD_SET(server_fd, &read_fds);
@@ -37,19 +44,11 @@ void serverInit()
 
 	setReusePort(server_fd );
 
-	return;
+
+    // 客户端配置初始化
+    initClientSetup();
 }
 
-int selectNewClientinfo()
-{
-	int i;
-	for (i = 0; i < SERVER_MAX_CONNECT; i++)
-	{
-		if (clientinfos[i].flag == DONE || clientinfos[i].flag == DEAD)
-			return i;
-	}
-	return -1 ;
-}
 
 void killClient(ClientInfo &client_info)
 {
@@ -70,104 +69,79 @@ void killClient(ClientInfo &client_info)
 }
 
 
-bool sSend(ClientInfo &client_info)
+
+void solveLogIn(std::vector<ClientInfo> i)
 {
-	int sndNum = send(client_info.cfd, sndMsg + client_info.rwLen, MsgLen - client_info.rwLen, 0);
+    string nwName = mapIndex[i->name];
 
-	if (sndNum <= 0) {
-		// TODO
-		cerr << "cllient_cfd :" << client_info.cfd << "snd error !\n";
-		killClient(client_info);
-		return false;
-	}
-	return true;
-}
+    // 判断是否该用户存在
+    if(userOffline.find(nwName) == userOffline.end()){
 
-bool sRecv(ClientInfo &client_info)
-{
-	int readNum = recv(client_info.cfd, &(client_info.msg.StuNo) + client_info.rwLen, MsgLen, 0);
-	if (readNum <= 0) {
-         // TODO
-		cerr << "cllient_cfd :" << client_info.cfd << "recv error !"<<client_info.count<<endl;
-		killClient(client_info);
-		return false;
-	}
+        // 遍历寻找之前在clientList中存储的旧数据
+        auto j=clientList.begin();
+        for(;j!=clientList.end() ; j++)
+            if(j->name == i->name){
+                //  将原来的j->cfd强制下线
+                sndResponse(j->cfd, mt::resLogin, sbt::repeatoff);
 
-	client_info.rwLen += readNum;
-	if (client_info.rwLen == MsgLen)
-	{
-		if(count==GETSTUNO)
-			client_info.msg.StuNo = ntohl(client_info.msg.StuNo);
-		else if(count == GETPID)
-			client_info.msg.clientPid= ntohl(client_info.msg.clientPid);
-		else if (count == GETTIME)
-			client_info.msg.clientTime[MsgLen] = 0;
-		client_info.count++;
-		client_info.rwLen = 0;
-	}
-	return true;
-}
-
-void dealFork(const int cfd)
-{
-	int pid = fork();
-	if (pid < 0) {
-		close(cfd);
-		cerr << "fork failed !\n";
-		return;
-	}
-	if (pid > 0){
-		close(cfd);
-		return;
-	}
-
-	prctl(PR_SET_PDEATHSIG,SIGKILL);
-
-	ClientInfo client_info;
-	client_info.cfd = cfd;
-	client_info.count = 0;
-	client_info.flag = ALIVE;
-	client_info.rwLen = 0;
-	memset(&(client_info.msg), 0, sizeof(client_info.msg));
-
-
-    //cout <<"unblock !\n";
-    FD_ZERO(&read_fds);
-    FD_SET(cfd, &read_fds);
-    write_fds = read_fds;
-
-    fd_set rfd_cpy, wfd_cpy;
-    timeval wait_time;
-    while(client_info.flag == ALIVE) {
-        
-        setTime(wait_time,1);
-        rfd_cpy = read_fds;
-        wfd_cpy = write_fds;
-        switch (select(cfd + 1, &rfd_cpy, &wfd_cpy, NULL, &wait_time)) {
-            case -1:
-                cerr<<"select error !\n";
+                // 从之前的client链接列表中剔除
+                clientInfo.erase(j);
                 break;
-            case 0 :
-                // cerr<<"waiting for events !\n";
-                break;
-            default :
+            }
 
-                if(FD_ISSET(cfd,&rfd_cpy)) {
-                    
-                    sRecv(client_info);
-                }
-                if(FD_ISSET(cfd,&wfd_cpy)){
+        // 程序出错
+        if(j == clientList.end()){
+            cerr << "something went wrong!\n ";
+            myExit();
+        }
 
-                    sSend(client_info);
-                }
+        // 发送新客户端上线成功
+        sndResponse(i->cfd, mt::resLogin, sbt::repeaton);
+    }
+    else{
+        // 如果为首次登陆
+        if(firstLognwName] == true){
+            firstLog[nwName] = false;
+            // 发送强制改密请求
+            sndResponse(i->resLogin, mt::resLogin, sbt::changepwd);
+        }
+        // 成功登陆
+        else{
+            // 从userOffline中删除，表示该用户已上线
+            userOffline.erase(nwName); 
+            // active状态设置为true，表示该用户已激活，可以传送文本等数据
+            i->active = true;
+            // 发送链接成功请求
+            sndResponse(i->cfd, mt::resLogin, sbt::success);
         }
     }
-
-	exit(0);
-	return;
 }
 
 
+bool newConnect()
+{
+	struct sockaddr_in client_addr;
+	socklen_t len_client_addr = sizeof(client_addr);
+
+	int cfd = accept(server_fd, (struct sockaddr *)&client_addr, &len_client_addr);
+    if(cfd == -1){
+        cerr<<"beyond ablility !\n";
+        return false;
+    }
+
+    if(!isClientValid())
+        return false;
+
+    ClientInfo nwClient(true, cfd);
+    clientList.push_back(nwClient);
+
+	FD_SET(cfd, &read_fds);
+	FD_SET(cfd, &write_fds);
+
+	max_fd = max_fd > cfd ? max_fd : cfd;
+
+	return true ;
+}
 
 int main(int argc, char *argv[])
 {
@@ -177,42 +151,65 @@ int main(int argc, char *argv[])
 	signal(SIGPIPE,SIG_IGN);
 	signal(SIGCHLD, SIG_IGN);
 
-
 	serverInit();
 
-	fd_set rfd_cpy, wfd_cpy;
 	timeval wait_time;
-
-	char msgTest [5];
-
 
     while (true) {
         setTime(wait_time, 1);
-        rfd_cpy = read_fds;
-        
-        switch (select(server_fd + 1, &rfd_cpy, NULL, NULL, &wait_time)) {
-            case -1:
-                cerr<<"select error ! "<<strerror(errno)<<"max ="<<max_fd<<endl;
-                break;
-            case 0:
-                cout << "waiting for client connecting...\n";
-                break;
-            default:
-                //cout<<"select success !\n";
-                if (FD_ISSET(server_fd, &rfd_cpy)) {
-                    int new_client_fd = accept(server_fd, NULL, NULL);
-                    if (new_client_fd < 0) {
-                        cerr << new_client_fd  << "failed to connect !\n";
-                        break;
-                    }
-                    setNonBlock(new_client_fd);
-                    
-                    dealFork(new_client_fd);
-                    cout << new_client_fd <<" has connected !\n";
+
+        switch (select(max_fd + 1, &read_fds, &write_fds, NULL, &wait_time)){
+        case -1:
+            cerr<<"select error ! "<<strerror(errno)<<"max ="<<max_fd<<endl;
+            sleep(1);
+            //if (errno != EINTR)
+            //	myExit();
+            break;
+        case 0:
+            cerr<<"select time out !\n";
+            break;
+        default:
+            if (FD_ISSET(server_fd, &rfd_cpy))
+                while(newConnect()==true){
+                    ;
                 }
-                break;
+            }
+            for(auto i = clientList.begin() ; i != clientList.end(); i++){}
+                if(i->cfd == -1)
+                    continue;
+                if (FD_ISSET(i->cfd, &rfd_cpy)) {
+                    Packet nwPacket;
+                    if(serverRecv(i->cfd, &nwPacket) ==  -1){ // 如果接收失败
+                        cerr << i->cfd << "send ERROR!\n";
+                        continue;
+                    }
+                    // 登陆请求
+                    if(nwPacket.isType(mt::login, sbt::request)){
+                        
+                        i->name = parse() // 得到用户名 TODO
+
+                        if( /*不匹配*/) // 查询数据库密码与用户是否匹配，发送登陆失败 TODO
+                            sndResponse(i->cfd, mt::resLogin, sbt::failed);
+
+                        solveLogIn(i);
+                        
+                    }
+
+                    // 发送文本
+
+                    // 发送头报文
+
+
+                }
+                if (FD_ISSET(clientList[i].cfd, &wfd_cpy) )  {
+                    ;
+                }
+            }
+            break;
         }
     }
-	
+    clientList.clear();
+
+
 	return 0;
 }

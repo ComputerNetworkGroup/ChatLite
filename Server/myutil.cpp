@@ -2,17 +2,7 @@
 
 struct sockaddr_in server_addr;
 int port;
-bool flag_block;
-bool flag_fork;
-int max_num;
 
-const char *orderMsg[]={
-	"StuNo",
-	"pid",
-	"TIME",
-	"str",
-	"end"
-};
 
 void create_daemon()
 {
