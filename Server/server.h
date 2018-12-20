@@ -1,8 +1,12 @@
 #include <fstream>
 #include <sys/prctl.h>
-#include "myutil.h"
+#include <vector>
 #include <set>
+#include <map>
+#include "myutil.h"
 #define MAX_CONNECT 1000
+#define MAX_LISTEN 20
+const bool flag_block = true;
 
 
 struct ClientInfo{

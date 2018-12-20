@@ -2,24 +2,30 @@
 #include "server.h"
 #include "../common/common.h"
 
+bool debug = true;
+
+
 int max_fd, server_fd;
 //ClientInfo clientList[SERVER_MAX_CONNECT];
 fd_set read_fds, write_fds;
 
 
-void killClient(ClientInfo &);
-
 void initClientSetup()
 {
-    // å®¢æˆ·ç«¯é…ç½®åˆå§‹åŒ–
-    while(usernameï¼Œ k = getFromDatabase()){
-        // ä»æ•°æ®åº“ä¸­å¾—åˆ°ä¸€ä¸ªåå­— username, åŠå…¶åºå· k
-        // (select DISTINCT name, id...)
+    // ¿Í»§¶ËÅäÖÃ³õÊ¼»¯
+    // while(username£¬ k = getFromDatabase()){
+    //     // ´ÓÊı¾İ¿âÖĞµÃµ½Ò»¸öÃû×Ö username, ¼°ÆäĞòºÅ k
+    //     // (select DISTINCT name, id...)
 
-        mapIndex[one.name] = k      // username.to_string -> int
-        userOffline.push_back(k);
-        firstLog.push_back(true);   // åœ¨ç¬¬kä¸ªåŠ å…¥true ä»£è¡¨è¯¥ç”¨æˆ·å°šæœªç™»é™†è¿‡
-    }
+    //     mapIndex[one.name] = k      // username.to_string -> int
+    //     userOffline.insert(k);
+    //     firstLog.push_back(true);   // ÔÚµÚk¸ö¼ÓÈëtrue ´ú±í¸ÃÓÃ»§ÉĞÎ´µÇÂ½¹ı
+    // }
+
+    mapIndex["root"]=0;
+    userOffline.insert(0);
+    firstLog.push_back(true);
+
 }
 
 void serverInit()
@@ -45,73 +51,73 @@ void serverInit()
 	setReusePort(server_fd );
 
 
-    // å®¢æˆ·ç«¯é…ç½®åˆå§‹åŒ–
+    // ¿Í»§¶ËÅäÖÃ³õÊ¼»¯
     initClientSetup();
 }
 
 
-void killClient(ClientInfo &client_info)
+// void killClient(ClientInfo &client_info)
+// {
+
+// 	if(client_info.flag == ALIVE &&client_info.count>8) {
+// 		if(writeFile(client_info, true)==false)
+// 			return ;
+// 		//cout<<"ready write \n";
+// 	}
+// 	client_info.flag = DEAD;
+// 	close(client_info.cfd);
+// 	FD_CLR(client_info.cfd, &read_fds);
+// 	FD_CLR(client_info.cfd, &write_fds);
+// 	totalConnectCfd--;
+// 	cout <<"totalConnectCfd "<<totalConnectCfd<<endl;
+
+// 	return;
+// }
+
+
+
+void solveLogIn(std::vector<ClientInfo>::iterator i)
 {
+    int index = mapIndex[i->name];
 
-	if(client_info.flag == ALIVE &&client_info.count>8) {
-		if(writeFile(client_info, true)==false)
-			return ;
-		//cout<<"ready write \n";
-	}
-	client_info.flag = DEAD;
-	close(client_info.cfd);
-	FD_CLR(client_info.cfd, &read_fds);
-	FD_CLR(client_info.cfd, &write_fds);
-	totalConnectCfd--;
-	cout <<"totalConnectCfd "<<totalConnectCfd<<endl;
+    // ÅĞ¶ÏÊÇ·ñ¸ÃÓÃ»§´æÔÚ
+    if(userOffline.find(index) == userOffline.end()){
 
-	return;
-}
-
-
-
-void solveLogIn(std::vector<ClientInfo> i)
-{
-    string nwName = mapIndex[i->name];
-
-    // åˆ¤æ–­æ˜¯å¦è¯¥ç”¨æˆ·å­˜åœ¨
-    if(userOffline.find(nwName) == userOffline.end()){
-
-        // éå†å¯»æ‰¾ä¹‹å‰åœ¨clientListä¸­å­˜å‚¨çš„æ—§æ•°æ®
+        // ±éÀúÑ°ÕÒÖ®Ç°ÔÚclientListÖĞ´æ´¢µÄ¾ÉÊı¾İ
         auto j=clientList.begin();
         for(;j!=clientList.end() ; j++)
             if(j->name == i->name){
-                //  å°†åŸæ¥çš„j->cfdå¼ºåˆ¶ä¸‹çº¿
-                sndResponse(j->cfd, mt::resLogin, sbt::repeatoff);
+                //  ½«Ô­À´µÄj->cfdÇ¿ÖÆÏÂÏß
+                sndResponse(j->cfd, mt::resLogin, sbt::repeatout);
 
-                // ä»ä¹‹å‰çš„clienté“¾æ¥åˆ—è¡¨ä¸­å‰”é™¤
-                clientInfo.erase(j);
+                // ´ÓÖ®Ç°µÄclientÁ´½ÓÁĞ±íÖĞÌŞ³ı
+                clientList.erase(j);
                 break;
             }
 
-        // ç¨‹åºå‡ºé”™
+        // ³ÌĞò³ö´í
         if(j == clientList.end()){
             cerr << "something went wrong!\n ";
             myExit();
         }
 
-        // å‘é€æ–°å®¢æˆ·ç«¯ä¸Šçº¿æˆåŠŸ
+        // ·¢ËÍĞÂ¿Í»§¶ËÉÏÏß³É¹¦
         sndResponse(i->cfd, mt::resLogin, sbt::repeaton);
     }
     else{
-        // å¦‚æœä¸ºé¦–æ¬¡ç™»é™†
-        if(firstLognwName] == true){
-            firstLog[nwName] = false;
-            // å‘é€å¼ºåˆ¶æ”¹å¯†è¯·æ±‚
-            sndResponse(i->resLogin, mt::resLogin, sbt::changepwd);
+        // Èç¹ûÎªÊ×´ÎµÇÂ½
+        if(firstLog[index] == true){
+            firstLog[index] = false;
+            // ·¢ËÍÇ¿ÖÆ¸ÄÃÜÇëÇó
+            sndResponse(i->cfd, mt::resLogin, sbt::changepwd);
         }
-        // æˆåŠŸç™»é™†
+        // ³É¹¦µÇÂ½
         else{
-            // ä»userOfflineä¸­åˆ é™¤ï¼Œè¡¨ç¤ºè¯¥ç”¨æˆ·å·²ä¸Šçº¿
-            userOffline.erase(nwName); 
-            // activeçŠ¶æ€è®¾ç½®ä¸ºtrueï¼Œè¡¨ç¤ºè¯¥ç”¨æˆ·å·²æ¿€æ´»ï¼Œå¯ä»¥ä¼ é€æ–‡æœ¬ç­‰æ•°æ®
-            i->active = true;
-            // å‘é€é“¾æ¥æˆåŠŸè¯·æ±‚
+            // ´ÓuserOfflineÖĞÉ¾³ı£¬±íÊ¾¸ÃÓÃ»§ÒÑÉÏÏß
+            userOffline.erase(index); 
+            // active×´Ì¬ÉèÖÃÎªtrue£¬±íÊ¾¸ÃÓÃ»§ÒÑ¼¤»î£¬¿ÉÒÔ´«ËÍÎÄ±¾µÈÊı¾İ
+            i->alive = true;
+            // ·¢ËÍÁ´½Ó³É¹¦ÇëÇó
             sndResponse(i->cfd, mt::resLogin, sbt::success);
         }
     }
@@ -129,10 +135,7 @@ bool newConnect()
         return false;
     }
 
-    if(!isClientValid())
-        return false;
-
-    ClientInfo nwClient(true, cfd);
+    ClientInfo nwClient(cfd);
     clientList.push_back(nwClient);
 
 	FD_SET(cfd, &read_fds);
@@ -169,39 +172,39 @@ int main(int argc, char *argv[])
             cerr<<"select time out !\n";
             break;
         default:
-            if (FD_ISSET(server_fd, &rfd_cpy))
+            if (FD_ISSET(server_fd, &read_fds)){
                 while(newConnect()==true){
                     ;
                 }
             }
-            for(auto i = clientList.begin() ; i != clientList.end(); i++){}
+            for(auto i = clientList.begin() ; i != clientList.end(); i++){
                 if(i->cfd == -1)
                     continue;
-                if (FD_ISSET(i->cfd, &rfd_cpy)) {
+                if (FD_ISSET(i->cfd, &read_fds)) {
                     Packet nwPacket;
-                    if(serverRecv(i->cfd, &nwPacket) ==  -1){ // å¦‚æœæ¥æ”¶å¤±è´¥
+                    if(serverRecv(i->cfd, nwPacket) ==  -1){ // Èç¹û½ÓÊÕÊ§°Ü
                         cerr << i->cfd << "send ERROR!\n";
                         continue;
                     }
-                    // ç™»é™†è¯·æ±‚
+                    // µÇÂ½ÇëÇó
                     if(nwPacket.isType(mt::login, sbt::request)){
-                        
-                        i->name = parse() // å¾—åˆ°ç”¨æˆ·å TODO
+                        loginData* p = (loginData*)nwPacket.msg;
+                        i->name = p->username;// µÃµ½ÓÃ»§Ãû TODO
 
-                        if( /*ä¸åŒ¹é…*/) // æŸ¥è¯¢æ•°æ®åº“å¯†ç ä¸ç”¨æˆ·æ˜¯å¦åŒ¹é…ï¼Œå‘é€ç™»é™†å¤±è´¥ TODO
+                        if(!debug /*²»Æ¥Åä*/) // ²éÑ¯Êı¾İ¿âÃÜÂëÓëÓÃ»§ÊÇ·ñÆ¥Åä£¬·¢ËÍµÇÂ½Ê§°Ü TODO
                             sndResponse(i->cfd, mt::resLogin, sbt::failed);
 
                         solveLogIn(i);
                         
                     }
 
-                    // å‘é€æ–‡æœ¬
+                    // ·¢ËÍÎÄ±¾
 
-                    // å‘é€å¤´æŠ¥æ–‡
+                    // ·¢ËÍÍ·±¨ÎÄ
 
 
                 }
-                if (FD_ISSET(clientList[i].cfd, &wfd_cpy) )  {
+                if (FD_ISSET(i->cfd, &write_fds) )  {
                     ;
                 }
             }
