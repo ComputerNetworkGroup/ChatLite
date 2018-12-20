@@ -1,8 +1,3 @@
-#include <fstream>
-#include <sys/prctl.h>
-#include <vector>
-#include <set>
-#include <map>
 #include "myutil.h"
 #define MAX_CONNECT 1000
 #define MAX_LISTEN 20
