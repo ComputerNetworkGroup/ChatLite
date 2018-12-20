@@ -53,7 +53,7 @@ namespace sbt
 
 	const unsigned char failed = 0x00;
 	const unsigned char pwderror = 0x03 ;
-	const unsigned char repeatout = 0x04 ;
+	const unsigned char repeatoff = 0x04 ;
 	const unsigned char repeaton = 0x05 ;
 
 	const unsigned char idNotExit = 0xfe;

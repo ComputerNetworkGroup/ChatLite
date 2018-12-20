@@ -139,50 +139,67 @@ int socketSend (int cfd , const Packet & packet)
 	int totalLen = 0;
 	int sndLen ;
 
+	char * buff = (char *) &packet ;
 	while(totalLen <msgLen)
 	{
-		sndLen = send(cfd, &packet+totalLen , msgLen - totalLen,0);
+		sndLen = send(cfd, buff+totalLen , msgLen - totalLen,0);
 		if(sndLen <=0)
 		{
 			cerr<<"socket snd msg error !\n";
-			exit(0);
 		}
-		totalLen +=sndLen ;
+		else 
+			totalLen +=sndLen ;
 	}
+	cout << "0 snd len = "<< sndLen << endl ;
 	return 0;
 }
 
 int socketRecv(int cfd , Packet & packet)
 {
 
-	int msgLen = 32;
+	int msgLen = 1024;
 	int totalLen = 0;
 	int recvNum;
 
-	while(totalLen <msgLen)
+
+	// unsolved 
+	char * buff = (char *)& packet ;
+
+	while(totalLen <32)
 	{
-		recvNum =recv(cfd,&packet.header+totalLen,msgLen-totalLen,0);
+		recvNum =recv(cfd,buff+totalLen,32,0);
+		cout <<"recv NUm "<< recvNum<<endl ;
 		if(recvNum<=0)
 		{
-			cerr<<"socket recv msg error !\n ";
-			exit(0);
+			cout << strerror(errno)<<endl;
+			cerr<<"0 socket recv msg error !\n ";
+			cout <<"totalLen "<< totalLen <<endl;
+			sleep(1);
 		}
-		totalLen +=recvNum ;
+		else 
+			totalLen +=recvNum ;
 	}
 
 	msgLen = getPacketLen(packet);
 
+	cout << "msgLen "<< msgLen <<endl;
+
 	while(totalLen <msgLen)
 	{
-		recvNum =recv(cfd,&packet+totalLen,msgLen-totalLen,0);
+
+		recvNum =recv(cfd,buff+totalLen,msgLen-totalLen,0);
+		cout << "totallen = "<< totalLen <<endl ;
 		if(recvNum<=0)
 		{
-			cerr<<"socket recv msg error !\n ";
-			exit(0);
+			cerr<<"1 socket recv msg error !\n ";
+			sleep(1);
+			continue ;
 		}
-		totalLen +=recvNum ;
+		else
+			totalLen +=recvNum ;
 	}
 
+	cout << "totalLen  "<< totalLen <<endl;
 	return 0;
 }
 
@@ -197,6 +214,8 @@ int sndLogin(int cfd , const char * username , const char * passwd )
 	
 	fillPacketHeader(p.header,mt::login,sbt::request , sizeof(loginData));
 
+
+	cout <<"login len = "<< getPacketLen(p)<<endl ; 
 	loginData * datap = (loginData *) p.msg ;
 
 	strcpy(datap->username,username);
