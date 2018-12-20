@@ -2,17 +2,7 @@
 
 struct sockaddr_in server_addr;
 int port;
-bool flag_block;
-bool flag_fork;
-int max_num;
 
-const char *orderMsg[]={
-	"StuNo",
-	"pid",
-	"TIME",
-	"str",
-	"end"
-};
 
 void create_daemon()
 {
@@ -67,47 +57,47 @@ void setNonBlock(int fd)
 
 }
 
-bool writeFile(const ClientInfo & cinfo, bool isServer)
-{
-	char filename [40], filepath[50];
-	sprintf(filename,"%d.%d.pid.txt",cinfo.msg.StuNo,cinfo.msg.clientPid);
-    if(isServer){
-        strcpy(filepath, "./txt");
-        if(mkdir(filepath, S_IRWXU | S_IRWXG | S_IRWXO) == 0){
-            cerr << "make directory failed!" <<endl;
-            // exit(-1);
-        }
-        strcat(filepath, "/");
-        strcat(filepath, filename);
-    }
-    else{
-        strcpy(filepath, "./txt");
-        if(mkdir(filepath, S_IRWXU | S_IRWXG | S_IRWXO) == 0){
-            cerr << "make directory failed!" <<endl;
-            //exit(-1);
-        }
-        strcat(filepath, "/");
-        strcat(filepath, filename);
-    }
+// bool writeFile(const ClientInfo & cinfo, bool isServer)
+// {
+// 	char filename [40], filepath[50];
+// 	sprintf(filename,"%d.%d.pid.txt",cinfo.msg.StuNo,cinfo.msg.clientPid);
+//     if(isServer){
+//         strcpy(filepath, "./txt");
+//         if(mkdir(filepath, S_IRWXU | S_IRWXG | S_IRWXO) == 0){
+//             cerr << "make directory failed!" <<endl;
+//             // exit(-1);
+//         }
+//         strcat(filepath, "/");
+//         strcat(filepath, filename);
+//     }
+//     else{
+//         strcpy(filepath, "./txt");
+//         if(mkdir(filepath, S_IRWXU | S_IRWXG | S_IRWXO) == 0){
+//             cerr << "make directory failed!" <<endl;
+//             //exit(-1);
+//         }
+//         strcat(filepath, "/");
+//         strcat(filepath, filename);
+//     }
 
-	ofstream fout ;
-	fout.open(filepath,ios::out|ios::trunc);
-	if(!fout.is_open()){
-		cerr<<"open file failed !\n";
-		return false ;
-	}
-	fout<<cinfo.msg.StuNo<<endl;
-	fout<<cinfo.msg.clientPid<<endl;
-	fout<<cinfo.msg.clientTime<<endl;
+// 	ofstream fout ;
+// 	fout.open(filepath,ios::out|ios::trunc);
+// 	if(!fout.is_open()){
+// 		cerr<<"open file failed !\n";
+// 		return false ;
+// 	}
+// 	fout<<cinfo.msg.StuNo<<endl;
+// 	fout<<cinfo.msg.clientPid<<endl;
+// 	fout<<cinfo.msg.clientTime<<endl;
 	
-	for (int i =0 ;i<cinfo.msg.randomMsgLen;i++)
-		fout<<cinfo.msg.randomMsg[i];
+// 	for (int i =0 ;i<cinfo.msg.randomMsgLen;i++)
+// 		fout<<cinfo.msg.randomMsg[i];
 	
-	//fout<<cinfo.msg.randomMsg<<endl;
-	cout<<filepath<<" ready write"<<endl;
-	fout.close();
-	return true;
-}
+// 	//fout<<cinfo.msg.randomMsg<<endl;
+// 	cout<<filepath<<" ready write"<<endl;
+// 	fout.close();
+// 	return true;
+// }
 
 
 
@@ -118,7 +108,6 @@ int parseCMD(int argc, char **argv ,int isClient )
     for (int i = 1; i<argc ; i++) {
         if (strstr(argv[i], "ip")) {
             server_addr.sin_addr.s_addr = inet_addr(argv[i + 1]);
-            hasip = true; 
             i++;
         }
 
