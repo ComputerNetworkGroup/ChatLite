@@ -35,7 +35,7 @@ void setReusePort(int fd);
 
 void setNonBlock(int fd);
 
-bool writeFile(const ClientInfo & cinfo, bool);
+// bool writeFile(const ClientInfo & cinfo, bool);
 
 void setTime(timeval &timeout, int sec, int usec = 0) ;
 
