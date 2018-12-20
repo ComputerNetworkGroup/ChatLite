@@ -145,7 +145,9 @@ int socketSend (int cfd , const Packet & packet)
 		sndLen = send(cfd, buff+totalLen , msgLen - totalLen,0);
 		if(sndLen <=0)
 		{
+			cout << strerror(errno)<<endl;
 			cerr<<"socket snd msg error !\n";
+			return -1 ;
 		}
 		else 
 			totalLen +=sndLen ;
@@ -157,7 +159,7 @@ int socketSend (int cfd , const Packet & packet)
 int socketRecv(int cfd , Packet & packet)
 {
 
-	int msgLen = 1024;
+	int msgLen = 32;
 	int totalLen = 0;
 	int recvNum;
 
@@ -167,14 +169,13 @@ int socketRecv(int cfd , Packet & packet)
 
 	while(totalLen <32)
 	{
-		recvNum =recv(cfd,buff+totalLen,32,0);
+		recvNum =recv(cfd,buff+totalLen,msgLen- totalLen,0);
 		cout <<"recv NUm "<< recvNum<<endl ;
 		if(recvNum<=0)
 		{
 			cout << strerror(errno)<<endl;
 			cerr<<"0 socket recv msg error !\n ";
-			cout <<"totalLen "<< totalLen <<endl;
-			sleep(1);
+			return -1 ;
 		}
 		else 
 			totalLen +=recvNum ;
@@ -191,9 +192,9 @@ int socketRecv(int cfd , Packet & packet)
 		cout << "totallen = "<< totalLen <<endl ;
 		if(recvNum<=0)
 		{
+			cout << strerror(errno)<<endl;
 			cerr<<"1 socket recv msg error !\n ";
-			sleep(1);
-			continue ;
+			return -1 ;
 		}
 		else
 			totalLen +=recvNum ;

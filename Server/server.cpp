@@ -109,7 +109,11 @@ void Server::solveLogin(std::vector<loginAction>::iterator i)
     cout <<"cfd = "<<cfd <<endl ;
     Packet p ;
 
-    serverRecv(cfd , p );
+    if(serverRecv(cfd , p )==-1)
+    {
+        removeLogin (i);
+        return ;
+    }
 
     //  如果不是login类型  则错误
     if(!p.isMainType(mt::login))
