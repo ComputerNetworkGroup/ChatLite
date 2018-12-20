@@ -1,5 +1,8 @@
 #include <iostream>
 #include <fstream>
+#include <vector>
+#include <set>
+#include <map>
 #include <stdio.h>
 #include <errno.h>
 #include <netinet/in.h>
@@ -11,6 +14,7 @@
 #include <net/if.h>
 #include <signal.h>
 #include <netdb.h>
+#include <sys/prctl.h>
 #include <sys/shm.h>
 #include <sys/time.h>
 #include <sys/stat.h>
