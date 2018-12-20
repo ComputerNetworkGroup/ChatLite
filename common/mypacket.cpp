@@ -129,7 +129,7 @@ int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned c
 {
 	header.mainType = mainType ;
 	header.subType = resType;
-	header.length = htons(msgLen+32);
+	header.length = htons(msgLen+4);
 }
 
 
@@ -159,7 +159,7 @@ int socketSend (int cfd , const Packet & packet)
 int socketRecv(int cfd , Packet & packet)
 {
 
-	int msgLen = 32;
+	int msgLen = 4;
 	int totalLen = 0;
 	int recvNum;
 
@@ -167,7 +167,7 @@ int socketRecv(int cfd , Packet & packet)
 	// unsolved 
 	char * buff = (char *)& packet ;
 
-	while(totalLen <32)
+	while(totalLen <msgLen)
 	{
 		recvNum =recv(cfd,buff+totalLen,msgLen- totalLen,0);
 		cout <<"recv NUm "<< recvNum<<endl ;

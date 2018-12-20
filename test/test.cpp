@@ -23,7 +23,8 @@ int main(int argc, char** argv)
 
 	cout <<"connect ok "<<endl;
     Packet packet;
-    sndLogin(cfd, "1", "1");
+    sndLogin(cfd, "2", "2");
+
 
 	cout <<"snd ok "<<endl;
     clientRecv(cfd, packet);
