@@ -21,10 +21,14 @@
 #include <sys/prctl.h>//修改进程名
 #include <queue>
 
+#include "common.h"
+
 using namespace std ;
 #define MAXLENGTH 2048
 #define MAXNAMELEN 32
 #define MAXPASSWDLEN 32
+
+#define HEADERLEN 4 
 
  namespace mt
  {
@@ -53,7 +57,7 @@ namespace sbt
 
 	const unsigned char failed = 0x00;
 	const unsigned char pwderror = 0x03 ;
-	const unsigned char repeatout = 0x04 ;
+	const unsigned char repeatoff = 0x04 ;
 	const unsigned char repeaton = 0x05 ;
 
 	const unsigned char idNotExit = 0xfe;
@@ -126,7 +130,9 @@ struct changePwdData {
 
 
 
+int socketSend (int cfd , const Packet & packet);
 
+int socketRecv(int cfd , Packet & packet);
 
 int getPacketLen(const Packet & packet);
 
@@ -166,16 +172,3 @@ int firstChangePwd(int cfd , const char * newPwd );
 
 
 // server 
-
-//server 接收packet
-int serverRecv(int cfd , Packet & packet);
-
-//server 发送数据（转发消息）
-int serverSend (int cfd ,const Packet & packet );
-
-//server 发送回应（只有报头信息，没有msg）
-int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype );
-
-//   将收到的 txt 包 解包（附上发送者的用户名）
-int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId );
-

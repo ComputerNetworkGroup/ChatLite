@@ -4,6 +4,105 @@ int socketSend (int cfd , const Packet & packet);
 
 int socketRecv(int cfd , Packet & packet);
 
+fd_set getSet(int cfd)
+{
+	fd_set  fds ;
+	FD_ZERO(&fds);
+	FD_SET(cfd , &fds);
+	return fds;
+}
+
+
+int socketSend (int cfd , const Packet & packet)
+{
+	int msgLen = getPacketLen(packet);
+	int totalLen = 0;
+	int sndLen ;
+
+	fd_set fds , fds_cpy ;
+	fds = getSet(cfd);
+
+	timeval timeOut ;
+
+	char * buff = (char *) &packet ;
+	while(totalLen <msgLen)
+	{
+		setTime(timeOut , 1 , 0 );
+		fds_cpy = fds ;
+
+		switch(select(cfd+1, NULL , &fds_cpy,NULL,&timeOut))
+		{
+			case -1 :
+				cerr<<"select error "<<endl;
+				return -1 ;
+			case 0 :
+				cerr<<"timeOut error"<<endl;
+				return -1;
+			default :
+				sndLen = send(cfd, buff + totalLen, msgLen - totalLen, 0);
+				if (sndLen <= 0)
+				{
+					cout << strerror(errno) << endl;
+					cerr << "socket snd msg error !\n";
+					return -1;
+				}
+				else
+					totalLen += sndLen;
+		}
+
+	}
+	cout << "send ok  snd len = "<< sndLen << endl ;
+	return 0;
+}
+
+int socketRecv(int cfd , Packet & packet)
+{
+
+	int msgLen = HEADERLEN;
+	int totalLen = 0;
+	int recvNum;
+
+	char * buff = (char *)& packet ;
+
+	fd_set fdset;
+	FD_ZERO(&fdset);
+	timeval timeOut ;
+
+	while(totalLen <msgLen)
+	{
+		FD_SET(cfd , &fdset) ;
+		setTime(timeOut , 1 ,0 );
+
+		switch(select(cfd+1, &fdset, NULL, NULL, &timeOut))
+		{
+			case -1:
+				cerr << "select error " << endl;
+				return -1;
+			case 0:
+				cerr << "timeOut error" << endl;
+				return -1;
+			default:
+				recvNum = recv(cfd, buff + totalLen, msgLen - totalLen, 0);
+				if (recvNum <= 0)
+				{
+					cout << strerror(errno) << endl;
+					cerr << "0 socket recv msg error !\n ";
+					return -1;
+				}
+				else
+					totalLen += recvNum;
+				
+				if(totalLen == HEADERLEN)
+				{
+					msgLen = getPacketLen(packet);
+				}
+		}
+	}
+
+
+	cout << "recv ok totalLen  "<< dec<<totalLen <<endl;
+	return 0;
+}
 
 
 int getPacketLen(const Packet & packet)
@@ -60,7 +159,6 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 	socketSend(cfd,p);
 	
 	// send fileData 
-
 	fillPacketHeader(p.header,mt::sndFile,sbt::myDefault,sizeof(fileData));
 
 	FILE * filep = fopen(filepath , "r");
@@ -88,102 +186,13 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 }
 
 
-int alterTxtPack( Packet &  desPack , Packet & srcPack , const char * srcId )
-{
-	int idNum = (int )srcPack.header.subType ;
-	int idLen = idNum * MAXNAMELEN ;
-	
-	int txtLen = getPacketLen(srcPack) - idLen ;
-	
-	strcpy (desPack.msg , srcId );
-	strcpy(desPack.msg+MAXNAMELEN , srcPack.msg + idLen);
-
-	fillPacketHeader(desPack.header,srcPack.header.mainType,srcPack.header.subType,txtLen +MAXNAMELEN );
-
-	return 0;
-}
-
-int alterFileHeaderPack(Packet & desPack , Packet & srcPack , const char * srcId )
-{
-	memcpy( &desPack , & srcPack , sizeof(desPack));
-	
-	fileHeader * fhp = (fileHeader *) desPack.msg;
-	strcpy(fhp->friName , srcId );
-
-	return 0;
-}
-
-int alterFileDataPack (Packet & desPack , Packet & srcPack , const char * srcId )
-{
-	memcpy( &desPack , & srcPack , sizeof(desPack));
-	
-	fileData * fdp = (fileData *) desPack.msg;
-	strcpy(fdp->friName , srcId );
-
-	return 0;
-}
-
 /////////////////////////////////////////////////////////////////////////////
 
 int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short msgLen)
 {
 	header.mainType = mainType ;
 	header.subType = resType;
-	header.length = htons(msgLen+32);
-}
-
-
-int socketSend (int cfd , const Packet & packet)
-{
-	int msgLen = getPacketLen(packet);
-	int totalLen = 0;
-	int sndLen ;
-
-	while(totalLen <msgLen)
-	{
-		sndLen = send(cfd, &packet+totalLen , msgLen - totalLen,0);
-		if(sndLen <=0)
-		{
-			cerr<<"socket snd msg error !\n";
-			exit(0);
-		}
-		totalLen +=sndLen ;
-	}
-	return 0;
-}
-
-int socketRecv(int cfd , Packet & packet)
-{
-
-	int msgLen = 32;
-	int totalLen = 0;
-	int recvNum;
-
-	while(totalLen <msgLen)
-	{
-		recvNum =recv(cfd,&packet.header+totalLen,msgLen-totalLen,0);
-		if(recvNum<=0)
-		{
-			cerr<<"socket recv msg error !\n ";
-			exit(0);
-		}
-		totalLen +=recvNum ;
-	}
-
-	msgLen = getPacketLen(packet);
-
-	while(totalLen <msgLen)
-	{
-		recvNum =recv(cfd,&packet+totalLen,msgLen-totalLen,0);
-		if(recvNum<=0)
-		{
-			cerr<<"socket recv msg error !\n ";
-			exit(0);
-		}
-		totalLen +=recvNum ;
-	}
-
-	return 0;
+	header.length = htons(msgLen+HEADERLEN);
 }
 
 int sndLogin(int cfd , const char * username , const char * passwd )
@@ -197,6 +206,8 @@ int sndLogin(int cfd , const char * username , const char * passwd )
 	
 	fillPacketHeader(p.header,mt::login,sbt::request , sizeof(loginData));
 
+
+	cout <<"login len = "<< getPacketLen(p)<<endl ; 
 	loginData * datap = (loginData *) p.msg ;
 
 	strcpy(datap->username,username);
@@ -266,38 +277,5 @@ int firstChangePwd(int cfd , const char * newPwd )
 }
 
 // server 
-
-int serverRecv(int cfd , Packet & packet)
-{
-	return socketRecv(cfd , packet);
-}
-
-int serverSend (int cfd , Packet & packet )
-{
-	return socketSend (cfd , packet );
-}
-
-int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype )
-{
-	Packet p ;
-	fillPacketHeader(p.header,maintype, subtype, 0 );
-
-	return socketSend(cfd , p);
-}
-
-
-int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId )
-{
-	if(srcPack.isMainType(mt::sndTxt))
-		alterTxtPack(desPack , srcPack , srcId );
-	else if (srcPack.isMainType(mt::sndFileHead))
-		alterFileHeaderPack(desPack , srcPack , srcId );
-	else if (srcPack.isMainType(mt::sndFile))
-		alterFileDataPack(desPack , srcPack , srcId );
-	else 
-		return -1 ;  //不需要转发
-	
-	return 0 ;
-}
 
 
