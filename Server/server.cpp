@@ -4,7 +4,12 @@
 
 bool debug = true;
 
+/* TODO
 
+把 日志相关放到
+
+
+*/
 
 Server::Server()
 {
@@ -92,9 +97,11 @@ void Server::add_cfd (int cfd )
     max_fd = max_fd > cfd ? max_fd : cfd;
 }
 
+// 不成功删除 loginList
 void Server::removeLogin (vector<loginAction>::iterator i)
-{
-    cout << "ready erase "<<endl ; 
+{    
+    //close_cfd (loginList[i].cfd);
+    //loginList.erate(loginList.begin()+i);
     close_cfd(i->cfd);
     loginList.erase(i);
     cout <<"erase ok !\n";
@@ -102,11 +109,10 @@ void Server::removeLogin (vector<loginAction>::iterator i)
 
 
 
-void Server::solveLogin(std::vector<loginAction>::iterator i)
+void Server::solveLogin(int index )
 {
-
+    auto i = loginList.begin() + index ;
     int cfd = i->cfd ; 
-    cout <<"cfd = "<<cfd <<endl ;
     Packet p ;
 
     if(serverRecv(cfd , p )==-1)
@@ -127,6 +133,11 @@ void Server::solveLogin(std::vector<loginAction>::iterator i)
         loginData * datap = (loginData *) p.msg;
 
 
+        cout <<"username and passwd "<<endl;
+        cout <<datap->username <<endl ;
+        cout << datap->passwd <<endl;
+
+
         //  用户名不存在
         if(nameIndex.find(datap->username)==nameIndex.end())
         {
@@ -137,14 +148,13 @@ void Server::solveLogin(std::vector<loginAction>::iterator i)
         }
 
         // 密码错误
-        if(dataBase->check_user(datap->username , datap->passwd))
+        if(dataBase->check_user(datap->username , datap->passwd) <= 0)
         {
             cout <<"not correct passwd  "<<endl ;
             sndResponse(cfd , mt::resLogin,sbt::pwderror);
             removeLogin(i);
             return ;
         }
-
         // 
         else 
         {
@@ -197,12 +207,13 @@ void Server::solveLogin(std::vector<loginAction>::iterator i)
     }
     else if (i->state == sbt::success && p.isSubType(sbt::success))
     {
+        cout <<"success login "<<endl;
         clientList[i->index].cfd = cfd ;
         tell_clinet_online (i->index);
         loginList.erase(i);
     }
 
-    cout <<"state "<< i->state <<' '<< endl ;
+    cout <<"state "<<hex <<(int) i->state <<' '<< endl ;
     return ;
 
 }
@@ -228,6 +239,7 @@ bool Server::newConnect()
 
     cout <<"accpet ok !\n"<<endl;
 
+    setNonBlock(cfd);
 
     add_cfd(cfd);
 
@@ -245,7 +257,7 @@ void Server::run()
     fd_set rfd_cpy , wfd_cpy ;
 
     while (true) {
-        setTime(wait_time, 1);
+        setTime(wait_time, 1,0);
         rfd_cpy = read_fds;
         wfd_cpy = write_fds ;
 
@@ -257,10 +269,10 @@ void Server::run()
 
                 break;
             case 0:
-                cerr<<"select time out !\n";
+                //cerr<<"select time out !\n";
                 break;
             default:
-                if (FD_ISSET(server_fd, &read_fds)){
+                if (FD_ISSET(server_fd, &rfd_cpy)){
                     while(newConnect()==true)
                     {
                         ;
@@ -268,12 +280,11 @@ void Server::run()
                 }
 
                 // login 
-                for (auto i = loginList.begin();i != loginList.end();i++)
-                    if(FD_ISSET(i->cfd,&read_fds))
+                for (auto i = 0;i < loginList.size();i++)
+                    if(FD_ISSET(loginList[i].cfd,&rfd_cpy ))
                     {
-                        cout << i->cfd << endl ;
+                        cout <<loginList[i].cfd << endl ;
                         solveLogin(i);
-                        break ;
                     }
                 
                 // send data 
@@ -303,6 +314,75 @@ int main(int argc, char *argv[])
     Server * server = new Server();
 
     server->run();
+
+	return 0;
+}
+
+
+int Server::serverRecv(int cfd , Packet & packet)
+{
+	return socketRecv(cfd , packet);
+}
+
+int Server::serverSend (int cfd , const Packet & packet )
+{
+	return socketSend (cfd , packet );
+}
+
+int Server::sndResponse(int cfd , unsigned char maintype ,unsigned char subtype )
+{
+	Packet p ;
+	fillPacketHeader(p.header,maintype, subtype, 0 );
+
+	return socketSend(cfd , p);
+}
+
+
+int Server::alterPack( Packet &  desPack , Packet & srcPack , const char * srcId )
+{
+	if(srcPack.isMainType(mt::sndTxt))
+		alterTxtPack(desPack , srcPack , srcId );
+	else if (srcPack.isMainType(mt::sndFileHead))
+		alterFileHeaderPack(desPack , srcPack , srcId );
+	else if (srcPack.isMainType(mt::sndFile))
+		alterFileDataPack(desPack , srcPack , srcId );
+	else 
+		return -1 ;  //不需要转发
+	
+	return 0 ;
+}
+
+int Server::alterTxtPack( Packet &  desPack , Packet & srcPack , const char * srcId )
+{
+	int idNum = (int )srcPack.header.subType ;
+	int idLen = idNum * MAXNAMELEN ;
+	
+	int txtLen = getPacketLen(srcPack) - idLen ;
+	
+	strcpy (desPack.msg , srcId );
+	strcpy(desPack.msg+MAXNAMELEN , srcPack.msg + idLen);
+
+	fillPacketHeader(desPack.header,srcPack.header.mainType,srcPack.header.subType,txtLen +MAXNAMELEN );
+
+	return 0;
+}
+
+int Server::alterFileHeaderPack(Packet & desPack , Packet & srcPack , const char * srcId )
+{
+	memcpy( &desPack , & srcPack , sizeof(desPack));
+	
+	fileHeader * fhp = (fileHeader *) desPack.msg;
+	strcpy(fhp->friName , srcId );
+
+	return 0;
+}
+
+int Server::alterFileDataPack (Packet & desPack , Packet & srcPack , const char * srcId )
+{
+	memcpy( &desPack , & srcPack , sizeof(desPack));
+	
+	fileData * fdp = (fileData *) desPack.msg;
+	strcpy(fdp->friName , srcId );
 
 	return 0;
 }

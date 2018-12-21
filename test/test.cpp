@@ -1,4 +1,4 @@
-#include "../server/myutil.h"
+#include "../common/common.h"
 #include "../common/mypacket.h"
 
 int main(int argc, char** argv)
@@ -23,13 +23,50 @@ int main(int argc, char** argv)
 
 	cout <<"connect ok "<<endl;
     Packet packet;
-    sndLogin(cfd, "2", "2");
+
+//	setNonBlock(cfd);
+
+    sndLogin(cfd, argv[3], argv[4]);
 
 
 	cout <<"snd ok "<<endl;
+
+	//sleep(1);
     clientRecv(cfd, packet);
-	cout << hex << (int)packet.header.mainType<<endl;
-	cout << hex << (int)packet.header.subType<<endl;
+
+	cout <<"maintype "<< hex << (int)packet.header.mainType<<endl;
+	cout <<"subtype "<< hex << (int)packet.header.subType<<endl;
+	cout << dec ;
+	if(packet.isType(mt::resLogin,sbt::changepwd))
+	{
+		
+		char passwd[] = "xixihaha";
+		cout <<passwd<<endl;
+		fillPacketHeader(packet.header,mt::login,sbt::changepwd,strlen(passwd)+1);
+		
+		strcpy(packet.msg,passwd);
+		socketSend(cfd , packet);
+
+		clientRecv(cfd, packet);
+		cout <<"maintype "<< hex << (int)packet.header.mainType<<endl;
+		cout <<"subtype "<< hex << (int)packet.header.subType<<endl;
+		cout << dec ;
+
+	}
+
+	if(packet.isType(mt::resLogin, sbt::success))
+	{
+		fillPacketHeader(packet.header,mt::login,sbt::success , 0 );
+
+		socketSend(cfd , packet);
+
+
+		cout <<"ok" <<endl;
+
+
+
+	}
+
     cout << packet.isType(mt::resLogin, sbt::changepwd) << endl;
     return 0;
 }   

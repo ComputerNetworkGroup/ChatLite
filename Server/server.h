@@ -5,8 +5,8 @@
 #include <set>
 #include <map>
 #include <sys/prctl.h>
-#include "myutil.h"
-#include "../sql2/sql.h"
+#include "../common/common.h"
+#include "../mysql/sql.h"
 #include "../common/mypacket.h"
 
 #define MAX_CONNECT 1000
@@ -23,14 +23,6 @@ struct ClientInfo{
         cfd = _cfd;
     }
 };
-
-namespace lg 
-{
-    const unsigned char request = 0x00;
-    const unsigned char changepwd = 0x01 ;
-    const unsigned char success = 0x02 ;
-
-}
 
 struct loginAction 
 {
@@ -68,7 +60,7 @@ private :
 
     bool newConnect ();
 
-    void solveLogin(std::vector<loginAction>::iterator i);
+    void solveLogin(int index);
 
     void removeLogin (vector<loginAction>::iterator i);
 
@@ -80,7 +72,25 @@ private :
 
     void initClientSetup();
 
-public :
+    //server 接收packet
+    int serverRecv(int cfd , Packet & packet);
+
+    //server 发送数据（转发消息）
+    int serverSend (int cfd ,const Packet & packet );
+
+    //server 发送回应（只有报头信息，没有msg）
+    int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype );
+
+    //   将收到的 txt 包 解包（附上发送者的用户名）
+    int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId );
+
+    int alterTxtPack(Packet &desPack, Packet &srcPack, const char *srcId);
+
+    int alterFileHeaderPack(Packet &desPack, Packet &srcPack, const char *srcId);
+
+    int alterFileDataPack(Packet &desPack, Packet &srcPack, const char *srcId);
+
+  public:
 
     Server();
 

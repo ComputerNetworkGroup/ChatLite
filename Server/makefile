@@ -1,9 +1,11 @@
 TARGET := server
 
+RELY= ../common/mypacket.cpp ../common/common.cpp ../mysql/sql.cpp
+
 main: $(TARGET)
 
-server: server.cpp myutil.cpp ../common/mypacket.cpp ../sql2/sql.cpp
-	g++ -std=c++11 -o server server.cpp myutil.cpp ../common/mypacket.cpp  ../sql2/sql.cpp -L /usr/lib64/mysql -lmysqlclient -I /usr/include/mysql
+server: server.cpp  $(RELY)
+	g++ -std=c++11 -o server server.cpp  $(RELY) -L /usr/lib64/mysql -lmysqlclient -I /usr/include/mysql
 
 
 clean :
