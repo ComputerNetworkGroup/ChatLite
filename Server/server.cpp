@@ -6,7 +6,11 @@ bool debug = true;
 
 /* TODO
 
-把 日志相关放到
+1. 日志
+
+2. 追加数据库
+
+3. 建立 cfdMap ， 并且可以自动关闭连接 
 
 
 */
@@ -177,7 +181,7 @@ void Server::solveLogin(int index )
                 close_cfd (clientList[i->index].cfd);
                 clientList[i->index].cfd = -1 ;
 
-                sndResponse(cfd , mt::resLogin , sbt::success);
+                sndResponse(cfd , mt::resLogin , sbt::repeaton);
                 i->state = sbt::success;
 
             }
@@ -220,6 +224,7 @@ void Server::solveLogin(int index )
 
 void Server::solveMsg(int index )
 {
+
     Packet srcPacket , desPacket ;
     
     int cfd = clientList[index].cfd;
@@ -232,13 +237,33 @@ void Server::solveMsg(int index )
     if(srcPacket.isGroupSnd())
     {
         cout <<"sovle msg group snd "<<endl ; 
-        vector <int> cfdList ; 
+        vector <string> cfdList ; 
 
         // TODO   get cfd List
 
+        if(strcmp (srcPacket.msg , SNDALL)==0)
+        {
+            for(auto j = clientList.begin();j!=clientList.end();j++)
+            {
+                if(j->cfd <0 || j->cfd == cfd )
+                    continue;
+                cfdList.push_back(j->name);
+            }
+        }
+        else
+        {
+            int num = srcPacket.header.subType;
+            for (int i = 0; i < num; i++)
+            {
+                cfdList.push_back(srcPacket.msg + i * 32);
+            }
+        }
+
+        alterTxtPack(desPacket , srcPacket , fromName );
+
         for(auto i = cfdList.begin();i!=cfdList.end();i++)
         {
-
+            sndOneMsg(index , (*i).c_str(), desPacket );
         }
 
 
@@ -249,7 +274,9 @@ void Server::solveMsg(int index )
         cout <<"--sovle msg  snd "<<endl ;
         char rcvName [32];
         memcpy(rcvName , srcPacket.msg,32);
-        if(nameIndex.find(rcvName)==nameIndex.end())
+        memcpy(srcPacket.msg, fromName , 32);
+        sndOneMsg(index , rcvName , srcPacket);
+/*         if(nameIndex.find(rcvName)==nameIndex.end())
         {
             cout <<"name not exit "<<endl;
             sndResponse(cfd , mt::resSend , sbt::idNotExit , fromName );
@@ -270,7 +297,7 @@ void Server::solveMsg(int index )
             memcpy(srcPacket.msg , fromName , 32 );
             serverSend(tocfd , srcPacket);
             sndResponse(cfd , mt::resSend , sbt::success , rcvName );
-        }
+        } */
 
 
     }
@@ -385,6 +412,7 @@ void Server::run()
                     {
                         cout <<"sovle login "<<loginList[i].cfd << endl ;
                         solveLogin(i);
+                        FD_CLR(loginList[i].cfd , &rfd_cpy ); //避免重复recv
                     }
                 
                 // send data 
@@ -496,4 +524,34 @@ int Server::alterFileDataPack (Packet & desPack , Packet & srcPack , const char 
 	strcpy(fdp->friName , srcId );
 
 	return 0;
+}
+
+// 发送一个数据包
+int Server::sndOneMsg(int index ,const char * rcvName , const Packet & packet )
+{
+    int cfd = clientList[index].cfd ;
+    const char * fromName = clientList[index].name.c_str();
+
+    if(nameIndex.find(rcvName)==nameIndex.end())
+    {
+        cout <<"name not exit "<<endl;
+        sndResponse(cfd , mt::resSend , sbt::idNotExit , fromName );
+    }
+    cout << "recv name =" <<rcvName <<endl ;
+    int tocfd = clientList[nameIndex[rcvName]].cfd;
+        
+    if(tocfd <0)
+    {
+        cout <<"sovle msg friend not online "<<endl;
+        sndResponse(cfd , mt::resSend , sbt::idOffline , fromName );
+    }
+    else if (tocfd != cfd ) 
+    {
+        cout <<"--ready  snd "<<endl ;
+        serverSend(tocfd , packet);
+        sndResponse(cfd , mt::resSend , sbt::success , rcvName );
+    }
+
+    return 0 ;
+
 }

@@ -18,9 +18,11 @@ using namespace std ;
 struct ClientInfo{
     int cfd;
     string name;
+    bool wake ;
     ClientInfo(string _name , int _cfd = -1){
         name = _name ;
         cfd = _cfd;
+        wake = false ;
     }
 };
 
@@ -51,8 +53,10 @@ private :
 
     vector<loginAction> loginList;
 
+    // name 到 clientList 下标的map
     map<string, int> nameIndex;
     
+    // cfd 到 clientList  下标的map
     map<int, int> cfdIndex;
 
     SERVER_MYSQL * dataBase;
@@ -91,6 +95,8 @@ private :
     int alterFileDataPack(Packet &desPack, Packet &srcPack, const char *srcId);
 
     void solveMsg(int index );
+
+    int sndOneMsg(int index ,const char * rcvName , const Packet & packet );
 
   public:
 
