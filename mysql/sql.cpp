@@ -7,10 +7,10 @@
 #include<openssl/md5.h>
 #include "sql.h"
 using namespace std;
-#define USRNAME "root"
-#define PASSWD ""
+#define USRNAME "u1651025"
+#define PASSWD "u1651025"
 #define HOSTNAME "localhost"
-#define DBNAME "test"
+#define DBNAME "db1651025"
 
 //写了大部分之后发现sprintf比strcat更好写，先不改
 
@@ -66,11 +66,10 @@ int SERVER_MYSQL::test_db(){
 }
 
 
-int SERVER_MYSQL::check_user(const char usr[],char passwd[]){
+int SERVER_MYSQL::check_user(char usr[],char passwd[]){
    //usr:用户名
    //passwd:密码
    //正确返回1，密码错误返回0 ，运行错误返回-1
-
    MYSQL_RES *result;
    MYSQL_ROW  row;
    char str[128]="select count(*) from userlist where id=\"";
@@ -141,7 +140,7 @@ int SERVER_MYSQL::need_set_passwd(char usr[]){
    return res;
 }
 
-int SERVER_MYSQL::set_passwd(const char usr[],char passwd[]){
+int SERVER_MYSQL::set_passwd(char usr[],char passwd[]){
    //设置密码，成功返回0，否则返回-1
    char str[128]="update userlist set passwd=MD5(\"";
    strcat(str,passwd);
@@ -255,7 +254,8 @@ int SERVER_MYSQL::get_msglist(char from_id[],char to_id[],int num,std::vector<st
    MYSQL_RES *result;
    MYSQL_ROW  row;
    char str[128];
-   sprintf(str,"select from_id,msg from msgs where from_id=\"%s\" and (to_id=\"%s\" or to_id=NULL) order by msg_time desc limit %d;",from_id,to_id,num);
+   sprintf(str,"select from_id,msg from msgs where (from_id=\"%s\" and to_id=\"%s\") or (from_id=\"%s\" and to_id=\"%s\") order by msg_time desc limit %d;",
+      from_id,to_id,to_id,from_id,num);
    if (mysql_query(mysql, str)) {
       cout << "mysql_query failed(" << mysql_error(mysql) << ")" << endl;
       return -1;
@@ -267,8 +267,8 @@ int SERVER_MYSQL::get_msglist(char from_id[],char to_id[],int num,std::vector<st
    }
    int res=(int)mysql_num_rows(result);
    while((row=mysql_fetch_row(result))!=NULL) {
-      //string tmp=row[0];
-      ve.push_back(row[1]);
+      string tmp=row[0];
+      ve.push_back(tmp+" "+row[1]);
    }
    mysql_free_result(result);
    return res;
