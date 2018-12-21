@@ -42,7 +42,7 @@ void Server::initClientSetup()
     vector <string > nameList ; 
 
     dataBase->get_userlist(nameList);
-    //  sql 
+    //  sql  
     int count = 0 ;
 
     for (auto i =0 ; i<nameList.size();i++)
