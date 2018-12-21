@@ -1,5 +1,6 @@
 
 #include <iostream>
+#include <map>
 using namespace std ;
 
 int main()
@@ -8,8 +9,11 @@ int main()
 
 	int &b = a ;
 
-	cout << hex << &a <<endl;
-	cout << hex << &b <<endl;
+	map <string , int > indexMap ;
+
+	indexMap.insert(make_pair("user10",10));
+
+	cout << indexMap["user10"]<<endl;
 
 	return 0;
 }

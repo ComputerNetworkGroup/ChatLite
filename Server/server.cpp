@@ -218,8 +218,108 @@ void Server::solveLogin(int index )
 
 }
 
+void Server::solveMsg(int index )
+{
+    Packet srcPacket , desPacket ;
+    
+    int cfd = clientList[index].cfd;
+    const char * fromName = clientList[index].name.c_str() ;
+
+    serverRecv( cfd , srcPacket);
+
+
+    // we nben xiao xi qun fa
+    if(srcPacket.isGroupSnd())
+    {
+        cout <<"sovle msg group snd "<<endl ; 
+        vector <int> cfdList ; 
+
+        // TODO   get cfd List
+
+        for(auto i = cfdList.begin();i!=cfdList.end();i++)
+        {
+
+        }
+
+
+    }
+
+    else if(srcPacket.isMainType(mt::sndTxt)||srcPacket.isMainType(mt::sndFile)||srcPacket.isMainType(mt::sndFileHead))
+    {
+        cout <<"--sovle msg  snd "<<endl ;
+        char rcvName [32];
+        memcpy(rcvName , srcPacket.msg,32);
+        if(nameIndex.find(rcvName)==nameIndex.end())
+        {
+            cout <<"name not exit "<<endl;
+            sndResponse(cfd , mt::resSend , sbt::idNotExit , fromName );
+        }
+        cout << "recv name =" <<rcvName <<endl ;
+        int tocfd = clientList[nameIndex[rcvName]].cfd;
+        
+        cout <<"tocfd = "<<tocfd<<endl;
+        
+        if(tocfd <0)
+        {
+            cout <<"sovle msg friend not online "<<endl;
+            sndResponse(cfd , mt::resSend , sbt::idOffline , fromName );
+        }
+        else if (tocfd != cfd ) 
+        {
+            cout <<"--ready  snd "<<endl ;
+            memcpy(srcPacket.msg , fromName , 32 );
+            serverSend(tocfd , srcPacket);
+            sndResponse(cfd , mt::resSend , sbt::success , rcvName );
+        }
+
+
+    }
+    else if (srcPacket.isMainType(mt::conf))
+    {
+        
+        switch (srcPacket.header.subType)
+        {
+            case (sbt::winTheme):
+                break;
+        
+            case (sbt::hisNum):
+                break ;
+
+            
+            default:
+                break;
+        }
+    }
+    else 
+    {
+        cout <<"parsing packet header type error !"<<endl ;
+        sleep(1);
+    }
+
+    return ;
+    
+
+
+}
+
 void Server::tell_clinet_online (int index )
 {
+    int cfd = clientList[index].cfd ;
+    const char * name = clientList[index].name.c_str();
+    Packet packet ;
+    
+    strcpy(packet.msg , name );
+    int len = strlen(packet.msg)+1 ;
+
+    packet.fillPacket(mt::updateList,sbt::tellOnline, name ,len);
+
+    for(auto i = clientList.begin() ; i!=clientList.end();i++)
+    {
+        if(i->cfd <0 || i->cfd ==cfd)
+            continue ;
+        serverSend(i->cfd, packet);
+        cout << "told cfd "<<i->cfd <<endl;
+    }
 
 }
 
@@ -283,17 +383,18 @@ void Server::run()
                 for (auto i = 0;i < loginList.size();i++)
                     if(FD_ISSET(loginList[i].cfd,&rfd_cpy ))
                     {
-                        cout <<loginList[i].cfd << endl ;
+                        cout <<"sovle login "<<loginList[i].cfd << endl ;
                         solveLogin(i);
                     }
                 
                 // send data 
-                for (auto i = clientList.begin(); i!=clientList.end();i++)
-                    if(i->cfd == -1 )
+                for (auto i = 0 ; i < clientList.size();i++)
+                    if(clientList[i].cfd <= -1 ||  !FD_ISSET(clientList[i].cfd , &rfd_cpy))
                         continue ;
                     else 
                     {
-
+                        cout <<"slove msg "<< loginList[i].cfd << endl ;
+                        solveMsg(i);
                     }
         }
 
@@ -329,10 +430,16 @@ int Server::serverSend (int cfd , const Packet & packet )
 	return socketSend (cfd , packet );
 }
 
-int Server::sndResponse(int cfd , unsigned char maintype ,unsigned char subtype )
+int Server::sndResponse(int cfd , unsigned char maintype ,unsigned char subtype ,const char * name )
 {
 	Packet p ;
-	fillPacketHeader(p.header,maintype, subtype, 0 );
+    int len = 0 ;
+    if(name != NULL)
+    {
+        len = strlen(name ) +1 ;
+        strcpy( p.msg , name );
+    }
+	fillPacketHeader(p.header,maintype, subtype, len );
 
 	return socketSend(cfd , p);
 }
@@ -340,6 +447,10 @@ int Server::sndResponse(int cfd , unsigned char maintype ,unsigned char subtype 
 
 int Server::alterPack( Packet &  desPack , Packet & srcPack , const char * srcId )
 {
+
+    if(0)
+        cout << debug <<endl ;
+    
 	if(srcPack.isMainType(mt::sndTxt))
 		alterTxtPack(desPack , srcPack , srcId );
 	else if (srcPack.isMainType(mt::sndFileHead))

@@ -61,9 +61,54 @@ int main(int argc, char** argv)
 		socketSend(cfd , packet);
 
 
-		cout <<"ok" <<endl;
+		cout <<"login ok" <<endl;
 
+		string toname , msg ;
 
+		while(1)
+		{
+			if (strcmp(argv[5],"send")==0)
+			{
+				cout << "请输入 用户名 and txt " << endl;
+				cin >> toname >> msg;
+				char buff[2048];
+				cout <<"msg "<<msg<<endl;
+				strcpy(buff, toname.c_str());
+				strcpy(buff + 32, msg.c_str());
+
+				packet.fillPacket(mt::sndTxt, 1, buff, msg.length() + 1 + 32);
+
+				socketSend(cfd, packet);
+				
+				if(clientRecv(cfd , packet)>=0)
+				{
+					cout << "maintype " << hex << (int)packet.header.mainType << endl;
+					cout << "subtype " << hex << (int)packet.header.subType << endl;
+					cout << dec;
+				}
+
+			}
+
+			else 
+			{
+				getchar();
+				if(clientRecv(cfd , packet)>=0)
+				{
+					cout << "maintype " << hex << (int)packet.header.mainType << endl;
+					cout << "subtype " << hex << (int)packet.header.subType << endl;
+
+					cout << packet.msg+32 << endl;
+
+					cout << dec;
+				}
+
+				cout << dec;
+			}
+					
+
+		}
+
+		
 
 	}
 

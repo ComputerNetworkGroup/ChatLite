@@ -79,7 +79,7 @@ private :
     int serverSend (int cfd ,const Packet & packet );
 
     //server 发送回应（只有报头信息，没有msg）
-    int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype );
+    int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype , const char * name =NULL );
 
     //   将收到的 txt 包 解包（附上发送者的用户名）
     int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId );
@@ -89,6 +89,8 @@ private :
     int alterFileHeaderPack(Packet &desPack, Packet &srcPack, const char *srcId);
 
     int alterFileDataPack(Packet &desPack, Packet &srcPack, const char *srcId);
+
+    void solveMsg(int index );
 
   public:
 

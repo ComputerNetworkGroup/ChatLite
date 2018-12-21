@@ -24,11 +24,13 @@
 #include "common.h"
 
 using namespace std ;
-#define MAXLENGTH 2048
+#define MAXDATALEN 2048
 #define MAXNAMELEN 32
 #define MAXPASSWDLEN 32
 
 #define HEADERLEN 4 
+
+#define SNDALL "/@all"
 
  namespace mt
  {
@@ -38,9 +40,12 @@ using namespace std ;
 	const unsigned char sndFile = 0x13;
 	const unsigned char sndTxt = 0X14;
 
+	const unsigned char conf = 0x21 ;
+	const unsigned char updateList = 0x22 ;
+
 	const unsigned char resLogin = 0x71;
-	const unsigned char resConf = 0X81 ;
 	const unsigned char resSend = 0X72;
+	const unsigned char resConf = 0X81 ;
  };
 
 namespace sbt
@@ -62,6 +67,13 @@ namespace sbt
 
 	const unsigned char idNotExit = 0xfe;
 	const unsigned char idOffline = 0xfd;
+
+	const unsigned char winTheme = 0x01;
+	const unsigned char friList = 0x02 ;
+	const unsigned char hisNum = 0x03 ;
+
+	const unsigned char tellOnline = 0x01 ;
+	const unsigned char tellOffline = 0x02 ;
 };
 
 struct packetHeader{
@@ -70,9 +82,13 @@ struct packetHeader{
 	unsigned short length;
 };
 
+
+int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short msgLen);
+
+
 struct Packet{
 	packetHeader header ;
-	char msg[MAXLENGTH+1024];
+	char msg[MAXDATALEN+1024];
 
 	bool isMainType( unsigned char maintp)
 	{
@@ -94,11 +110,31 @@ struct Packet{
 		return ntohs(header.length);
 	}
 
+	int fillPacket (unsigned char maintp , unsigned char subtp , const void * data , int len )
+	{
+		fillPacketHeader(header,maintp , subtp , len );
+		memcpy (msg , data , len );
+		return 0 ;
+	}
+
+	bool isGroupSnd()
+	{
+		if(isMainType(mt::sndTxt)&& (header.subType >1 || strcmp(msg,SNDALL)==0))
+			return true ;
+		return false ;
+	}
+
 
 
 };
 
 //  以下是几种消息报文的格式 可以将msg强制类型转换 如 fileData * datap = (fileData *) msg ;  
+
+struct TxtData
+{
+	char friName [MAXNAMELEN];
+	char txtMsg [MAXDATALEN];
+};
 
 //  传输文件类型的数据 ，第一个包是这个格式  
 struct fileHeader 
@@ -114,7 +150,7 @@ struct fileData{
 	char friName[MAXNAMELEN];
 	int fileId ;
 	int count ;
-	char data[MAXLENGTH];
+	char data[MAXDATALEN];
 };
 
 
@@ -139,9 +175,6 @@ int getPacketLen(const Packet & packet);
 unsigned char getMainType (const Packet & packet);
 
 unsigned char getSubType (const Packet & packet );
-
-
-int fillPacketHeader(packetHeader & header , unsigned char mainType , unsigned char resType , unsigned short msgLen);
 
 int getFileSize(const char * filePath);
 

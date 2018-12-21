@@ -153,7 +153,7 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 	int fileId ; 
 	// TODO    ¼ÆËãidÖµ
 	headp->fileId = fileId ;
-	int packNum = fileSize / MAXLENGTH + (fileSize % MAXLENGTH)!=0;
+	int packNum = fileSize / MAXDATALEN + (fileSize % MAXDATALEN)!=0;
 	headp->packNum =  htonl(packNum);
 
 	socketSend(cfd,p);
@@ -171,11 +171,11 @@ int sndFileKind(int cfd , const char * id , unsigned char subType, const char * 
 
 	for(int i =0 ; i< packNum ; i++)
 	{
-		fread(datap->data,MAXLENGTH,1,filep);
+		fread(datap->data,MAXDATALEN,1,filep);
 
 		//  TEST 
-		if(i==packNum-1 && (fileSize % MAXLENGTH))
-			p.header.length = htonl(fileSize % MAXLENGTH + 40 );
+		if(i==packNum-1 && (fileSize % MAXDATALEN))
+			p.header.length = htonl(fileSize % MAXDATALEN + 40 );
 		
 		datap->count = htonl(i);
 		socketSend(cfd , p);

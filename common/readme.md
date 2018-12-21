@@ -14,9 +14,37 @@
 ---|:--:|:---:
 发送文本消息|0x14(sndTxt)| x(代表发送信息用户名数量)
 
+## **client上线下线修改好友列表信息**
+
+#### 报文头  
+
+行为|maintype|subtype|
+---|:--:|:---:
+通知上线|0x22(updateList)| 0x01(tellOnline)
+通知下线|0x22(updateList)| 0x00(tellOffline)
+
+#### 报文信息
+
+* 32字节的char型 （上线或下线的用户名）
+
+## **client更改配置信息**
+
+#### 报文头  
+
+行为|maintype|subtype|
+---|:--:|:---:
+更改主题|0x21(conf)| 0x01(winTheme)
+更改历史长度|0x21(conf)| 0x03(hisNum)
+
+#### 报文信息
+
+* 32字节的char型 （上线或下线的用户名）
+
+
+
 
 ## **client向好友发送文件**
-### 阶段1：发送消息头报文，得到文件id和分成多少个包
+### 阶段1：发送消息头报文，得到文件id和分成多少个包（在这个阶段完成打开文件指针，建立id到文件指针的关系）
 
 #### 报文头  
 
@@ -27,7 +55,7 @@
 发送gif|0x12(sndFileHead)|0x03(gif)
 
 #### 报文内容
-* 32字节的char型 （用户名）
+* 32字节的char型 （用户名） // 发包为接收者的用户名，收包为发送者的用户名，server端做处理
 * 32字节的char型 （文件名）
 * int类型 id （代表文件编号）
 * int类型 count （代表一共几个包）
@@ -36,16 +64,25 @@
 
 #### 报文头  
 
-
 行为|maintype|subtype|
 ---|:--:|:---:
-发送文件类型信息|0x13(sndFile)|0x00(myDefault)
+发送文件类型信息|0x13(sndFile)|0x00(filedata)
 
 #### 报文内容
-* int类型 id （代表文件编号）
+* int类型 id （代表文件编号） // 仅通过用户名判断
 * int类型 count （代表第几个包）
 * 最长为 MAXLENGTH 的数据
 
+### 阶段3：发送文件传输结束标志 （通知传输文件结束）
+
+#### 报文头  
+
+行为|maintype|subtype|
+---|:--:|:---:
+发送文件类型信息|0x13(sndFile)|0x01(success)
+
+#### 报文内容
+* int类型 id （代表文件编号）
 
 ## **server回应登录**
 
@@ -63,8 +100,10 @@
 
 行为|maintype|subtype|
 ---|:--:|:---:
-窗口主题|0x81(resConf)|0x01
-好友列表|0x82(resConf)|0x02
+窗口主题|0x81(resConf)|0x01(winTheme)
+好友列表|0x81(resConf)|0x02(friList)
+历史长度|0x81(resConf)| 0x03(hisNum)
+
 
 ## **server回应转发状态**
 
@@ -76,6 +115,8 @@
 好友名称不存在|0x72(resSend)|0xfe(idNotExit)
 好友未上线|0x72(resSend)|0xfd(idOffline)
 
+#### 报文内容
+* char name[32] （好友名称）
 
 
 
