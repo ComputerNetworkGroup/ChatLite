@@ -9,6 +9,7 @@
 #include "../mysql/sql.h"
 #include "../common/mypacket.h"
 
+
 #define MAX_CONNECT 1000
 #define MAX_LISTEN 1000
 const bool flag_block = true;
@@ -72,16 +73,16 @@ private :
 
     void initClientSetup();
 
-    //server ½ÓÊÕpacket
+    //server ï¿½ï¿½ï¿½ï¿½packet
     int serverRecv(int cfd , Packet & packet);
 
-    //server ·¢ËÍÊý¾Ý£¨×ª·¢ÏûÏ¢£©
+    //server ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½×ªï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½
     int serverSend (int cfd ,const Packet & packet );
 
-    //server ·¢ËÍ»ØÓ¦£¨Ö»ÓÐ±¨Í·ÐÅÏ¢£¬Ã»ÓÐmsg£©
+    //server ï¿½ï¿½ï¿½Í»ï¿½Ó¦ï¿½ï¿½Ö»ï¿½Ð±ï¿½Í·ï¿½ï¿½Ï¢ï¿½ï¿½Ã»ï¿½ï¿½msgï¿½ï¿½
     int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype );
 
-    //   ½«ÊÕµ½µÄ txt °ü ½â°ü£¨¸½ÉÏ·¢ËÍÕßµÄÓÃ»§Ãû£©
+    //   ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ txt ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½ßµï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
     int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId );
 
     int alterTxtPack(Packet &desPack, Packet &srcPack, const char *srcId);
