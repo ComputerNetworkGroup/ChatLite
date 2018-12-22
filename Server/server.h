@@ -9,7 +9,6 @@
 #include "../mysql/sql.h"
 #include "../common/mypacket.h"
 
-
 #define MAX_CONNECT 1000
 #define MAX_LISTEN 1000
 const bool flag_block = true;
@@ -19,9 +18,11 @@ using namespace std ;
 struct ClientInfo{
     int cfd;
     string name;
+    bool wake ;
     ClientInfo(string _name , int _cfd = -1){
         name = _name ;
         cfd = _cfd;
+        wake = false ;
     }
 };
 
@@ -52,8 +53,10 @@ private :
 
     vector<loginAction> loginList;
 
+    // name µ½ clientList ÏÂ±êµÄmap
     map<string, int> nameIndex;
     
+    // cfd µ½ clientList  ÏÂ±êµÄmap
     map<int, int> cfdIndex;
 
     SERVER_MYSQL * dataBase;
@@ -73,18 +76,16 @@ private :
 
     void initClientSetup();
 
-    //server ï¿½ï¿½ï¿½ï¿½packet
+    //server ½ÓÊÕpacket
     int serverRecv(int cfd , Packet & packet);
 
-    //server ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ý£ï¿½×ªï¿½ï¿½ï¿½ï¿½Ï¢ï¿½ï¿½
+    //server ·¢ËÍÊý¾Ý£¨×ª·¢ÏûÏ¢£©
     int serverSend (int cfd ,const Packet & packet );
 
-
-    //server ï¿½ï¿½ï¿½Í»ï¿½Ó¦ï¿½ï¿½Ö»ï¿½Ð±ï¿½Í·ï¿½ï¿½Ï¢ï¿½ï¿½Ã»ï¿½ï¿½msgï¿½ï¿½
+    //server ·¢ËÍ»ØÓ¦£¨Ö»ÓÐ±¨Í·ÐÅÏ¢£¬Ã»ÓÐmsg£©
     int sndResponse(int cfd , unsigned char maintype ,unsigned char subtype , const char * name =NULL );
 
-
-    //   ï¿½ï¿½ï¿½Õµï¿½ï¿½ï¿½ txt ï¿½ï¿½ ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½Ï·ï¿½ï¿½ï¿½ï¿½ßµï¿½ï¿½Ã»ï¿½ï¿½ï¿½ï¿½ï¿½
+    //   ½«ÊÕµ½µÄ txt °ü ½â°ü£¨¸½ÉÏ·¢ËÍÕßµÄÓÃ»§Ãû£©
     int alterPack( Packet &  desPack , Packet & srcPack , const char * srcId );
 
     int alterTxtPack(Packet &desPack, Packet &srcPack, const char *srcId);
@@ -94,6 +95,8 @@ private :
     int alterFileDataPack(Packet &desPack, Packet &srcPack, const char *srcId);
 
     void solveMsg(int index );
+
+    int sndOneMsg(int index ,const char * rcvName , const Packet & packet );
 
   public:
 

@@ -96,8 +96,8 @@ int main(int argc, char** argv)
 				{
 					cout << "maintype " << hex << (int)packet.header.mainType << endl;
 					cout << "subtype " << hex << (int)packet.header.subType << endl;
-
-					cout << packet.msg+32 << endl;
+					cout <<"from "<<packet.msg<<endl;
+					cout << "msg "<<packet.msg+32 << endl;
 
 					cout << dec;
 				}

@@ -13,7 +13,7 @@ int main()
 
 	indexMap.insert(make_pair("user10",10));
 
-	cout << indexMap["user10"]<<endl;
+	cout << indexMap["000"]<<endl;
 
 	return 0;
 }
