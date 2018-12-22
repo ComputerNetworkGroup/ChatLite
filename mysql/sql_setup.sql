@@ -29,8 +29,9 @@ insert into userlist values("2",MD5('2'),'1988-1-1 00:00:00');
 insert into userlist values("3",MD5('3'),'1970-1-1 00:00:00');
 insert into userlist values("4",MD5('4'),'1970-1-1 00:00:00');
 insert into userlist values("5",MD5('5'),'1970-1-1 00:00:00');
+insert into userlist values("6",MD5('6'),'1970-1-1 00:00:00');
 
-insert into userlist values("mlc",MD5('mlc'),'1970-1-1 00:00:00');
-insert into userlist values("wh",MD5('wh'),'1970-1-1 00:00:00');
-insert into userlist values("jhl",MD5('jhl'),'1970-1-1 00:00:00');
-insert into userlist values("oyxw",MD5('oyxw'),'1970-1-1 00:00:00');
+insert into userlist values("mlc",MD5('mlc'),'1971-1-1 00:00:00');
+insert into userlist values("wh",MD5('wh'),'1971-1-1 00:00:00');
+insert into userlist values("jhl",MD5('jhl'),'1971-1-1 00:00:00');
+insert into userlist values("oyxw",MD5('oyxw'),'1971-1-1 00:00:00');

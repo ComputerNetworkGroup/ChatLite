@@ -6,11 +6,8 @@ using namespace std ;
 
 int main()
 {
-	string a ;
-	cout <<a<<endl;
 
-	a += "2333";
-	cout <<a<<endl;
+	cout <<sizeof(long long )<<endl;
 
 	return 0;
 }

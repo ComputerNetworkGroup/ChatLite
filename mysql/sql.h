@@ -37,7 +37,7 @@ int get_settings(const char usr[]);
 int set_settings(char usr[],int settings);
 
 
-int sql_update_msg(char send_usr[],char recv_usr[],char msg[]);
+int sql_update_msg(const char send_usr[],const char recv_usr[],const char msg[]);
 int sql_update_broadcast(char send_usr[],char msg[]);
 int get_msglist(char from_id[],char to_id[],int num,std::vector<std::string> &ve);
 int test_db();

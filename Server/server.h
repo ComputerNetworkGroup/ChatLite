@@ -4,6 +4,7 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <queue>
 #include <sys/prctl.h>
 #include "../common/common.h"
 #include "../mysql/sql.h"
@@ -18,21 +19,9 @@ using namespace std ;
 namespace logt
 {
     const unsigned char userDisconn = 0x01 ;
-    
-};
-struct ClientInfo{
-    int cfd;
-    string name;
-    bool wake ;
-    sockaddr_in sockaddr ; 
-
-    ClientInfo(string _name , int _cfd = -1){
-        name = _name ;
-        cfd = _cfd;
-        wake = false ;
-    }
 
 };
+
 
 struct loginAction 
 {

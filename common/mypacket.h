@@ -34,8 +34,8 @@ using namespace std ;
 
 namespace cstate 
 {
-	const char online = 0x11 ;
-	const char offline = 0x12 ;
+	const char online = '1' ;
+	const char offline = '0' ;
 };
 
  namespace mt
@@ -82,8 +82,12 @@ namespace sbt
 
 	const unsigned char tellOnline = 0x01 ;
 	const unsigned char tellOffline = 0x02 ;
+	const unsigned char offlineSnd = 0x07 ;
 
 };
+
+
+
 
 struct packetHeader{
 	unsigned char mainType ;
@@ -141,7 +145,7 @@ struct Packet{
 
 struct TxtData
 {
-	char friName [MAXNAMELEN];
+	char friName [MAXNAMELEN ];
 	char txtMsg [MAXDATALEN];
 };
 
@@ -171,6 +175,22 @@ struct loginData{
 
 struct changePwdData {
 	char newPasswd [MAXPASSWDLEN];
+};
+
+struct ClientInfo{
+    int cfd;
+    string name;
+    bool wake ;
+    sockaddr_in sockaddr ; 
+    
+    vector<Packet> offlinePacks ;
+    ClientInfo(string _name , int _cfd = -1){
+        name = _name ;
+        cfd = _cfd;
+        wake = false ;
+        offlinePacks.clear();
+    }
+
 };
 
 

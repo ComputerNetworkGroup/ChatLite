@@ -2,6 +2,8 @@
 #include "server.h"
 
 
+const bool g_offline_snd = true ;
+
 bool debug = true;
 
 /* TODO
@@ -93,10 +95,12 @@ void Server::close_cfd(int cfd )
     if(p != cfdIndex.end())
     {
         //clientList[p->second].cfd = -1 ;
+        cout <<"tell off line "<<endl;
         cfdIndex.erase(p);
         user_offline( p->second );
         
     }
+    
     FD_CLR( cfd , &read_fds);
     FD_CLR (cfd , &write_fds);
     close(cfd);  
@@ -124,12 +128,28 @@ void Server::user_online ( int cfdindex )
 
     auto i = loginList.begin() + cfdindex ;
     cfdIndex.insert(make_pair( i->cfd , i->index));
-    clientList[i->index].cfd = i->cfd ;
-    clientList[i->index].sockaddr = i->sockaddr;
-    tell_clinet_onoffline (i->index , true);
-    int cfd = i->cfd ;
-    string name = clientList[i->index].name ;
+
+    int index = i->index ;
+    int cfd = i->cfd ; 
+
+    clientList[index].cfd = cfd ;
+    clientList[index].sockaddr = i->sockaddr;
+    tell_clinet_onoffline (index , true);
+    string name = clientList[index].name ;
     loginList.erase(i);
+
+
+    //离线重传
+    if(g_offline_snd)
+    {
+        for(auto pack = clientList[index].offlinePacks.begin(); pack!=clientList[index].offlinePacks.end() ; pack ++)
+        {
+            serverSend(cfd , *pack);
+        }
+        clientList[index].offlinePacks.clear();
+        cout << "offline snd ok !"<<endl;
+    }
+
 
     // 好友列表
     string friMsg ;
@@ -370,6 +390,8 @@ void Server::solveMsg(int index )
         switch (srcPacket.header.subType)
         {
             case (sbt::winTheme):
+                //int setColor = 
+                //dataBase->set_settings( clientList[index].name , )
                 break;
         
             case (sbt::hisNum):
@@ -398,8 +420,8 @@ void Server::tell_clinet_onoffline (int index ,bool isOnline)
     const char * name = clientList[index].name.c_str();
     Packet packet ;
     
-    strcpy(packet.msg , name );
-    int len = strlen(packet.msg)+1 ;
+    //strcpy(packet.msg , name );
+    int len = strlen(name)+1 ;
 
     if(isOnline)
         packet.fillPacket(mt::updateList,sbt::tellOnline, name ,len);
@@ -615,21 +637,34 @@ int Server::sndOneMsg(int index ,const char * rcvName , const Packet & packet )
     if(nameIndex.find(rcvName)==nameIndex.end())
     {
         cout <<"name not exit "<<endl;
-        sndResponse(cfd , mt::resSend , sbt::idNotExit , fromName );
+        sndResponse(cfd , mt::resSend , sbt::idNotExit , rcvName );
     }
     cout << "recv name =" <<rcvName <<endl ;
-    int tocfd = clientList[nameIndex[rcvName]].cfd;
+    int rcvIndex = nameIndex[rcvName];
+    int tocfd = clientList[rcvIndex].cfd;
         
     if(tocfd <0)
     {
-        cout <<"sovle msg friend not online "<<endl;
-        sndResponse(cfd , mt::resSend , sbt::idOffline , fromName );
+        if(!g_offline_snd) {
+            cout << "sovle msg friend not online " << endl;
+            sndResponse(cfd, mt::resSend, sbt::idOffline, rcvName);
+        }
+        else {
+            cout <<"offline snd "<<endl;
+            clientList[rcvIndex].offlinePacks.push_back(packet);
+            sndResponse(cfd, mt::resSend, sbt::offlineSnd, rcvName);   
+        }
     }
     else if (tocfd != cfd ) 
     {
         cout <<"--ready  snd "<<endl ;
         serverSend(tocfd , packet);
         sndResponse(cfd , mt::resSend , sbt::success , rcvName );
+        
+        if(packet.header.mainType==mt::sndTxt)
+        {
+            dataBase->sql_update_msg(fromName , rcvName, packet.msg+32);
+        }
     }
 
     return 0 ;

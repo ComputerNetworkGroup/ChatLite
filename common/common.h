@@ -26,7 +26,6 @@ extern struct sockaddr_in server_addr;
 extern int port;
 extern const char * orderMsg [];
 
-
 void create_daemon();
 
 void myExit();

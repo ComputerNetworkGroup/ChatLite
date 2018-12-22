@@ -7,15 +7,15 @@
 #include<openssl/md5.h>
 #include "sql.h"
 using namespace std;
-/* #define USRNAME "u1651025"
+#define USRNAME "u1651025"
 #define PASSWD "u1651025"
 #define HOSTNAME "localhost"
-#define DBNAME "db1651025" */
-#define USRNAME "root"
+#define DBNAME "db1651025"
+/* #define USRNAME "root"
 #define PASSWD ""
 #define HOSTNAME "localhost"
 #define DBNAME "test"
-
+ */
 //写了大部分之后发现sprintf比strcat更好写，先不改
 
 SERVER_MYSQL::SERVER_MYSQL(){
@@ -227,7 +227,7 @@ int SERVER_MYSQL::set_settings(char usr[],int settings){
    return settings;
 }
 
-int SERVER_MYSQL::sql_update_msg(char send_usr[],char recv_usr[],char msg[]){
+int SERVER_MYSQL::sql_update_msg(const char send_usr[],const char recv_usr[],const char msg[]){
 //保存聊天记录,成功返回0，否则返回-1
    char str[512]="insert into msgs(from_id,to_id,msg_time,msg) values(\"";
    strcat(str,send_usr);
