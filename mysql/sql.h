@@ -32,7 +32,7 @@ int set_passwd(const char usr[],char passwd[]);
 
 int get_userlist(std::vector<std::string> &ve);
 
-int get_settings(char usr[]);
+int get_settings(const char usr[]);
 
 int set_settings(char usr[],int settings);
 

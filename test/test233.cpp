@@ -1,19 +1,16 @@
 
 #include <iostream>
 #include <map>
+#include <string>
 using namespace std ;
 
 int main()
 {
-	int a  = 4;
+	string a ;
+	cout <<a<<endl;
 
-	int &b = a ;
-
-	map <string , int > indexMap ;
-
-	indexMap.insert(make_pair("user10",10));
-
-	cout << indexMap["000"]<<endl;
+	a += "2333";
+	cout <<a<<endl;
 
 	return 0;
 }

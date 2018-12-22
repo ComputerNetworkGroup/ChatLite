@@ -32,6 +32,12 @@ using namespace std ;
 
 #define SNDALL "/@all"
 
+namespace cstate 
+{
+	const char online = 0x11 ;
+	const char offline = 0x12 ;
+};
+
  namespace mt
  {
 	 // client  send 
@@ -56,6 +62,7 @@ namespace sbt
 	const unsigned char success = 0x01 ;
 	const unsigned char changepwd = 0x02 ;
 
+	const unsigned char groupChat = 0x00 ;
 	const unsigned char file = 0x01;
 	const unsigned char jpg = 0x02;
 	const unsigned char gif = 0x03 ;
@@ -64,6 +71,7 @@ namespace sbt
 	const unsigned char pwderror = 0x03 ;
 	const unsigned char repeatoff = 0x04 ;
 	const unsigned char repeaton = 0x05 ;
+	const unsigned char pwdChangeErr = 0x06;
 
 	const unsigned char idNotExit = 0xfe;
 	const unsigned char idOffline = 0xfd;
@@ -74,6 +82,7 @@ namespace sbt
 
 	const unsigned char tellOnline = 0x01 ;
 	const unsigned char tellOffline = 0x02 ;
+
 };
 
 struct packetHeader{

@@ -89,6 +89,14 @@ void Server::serverInit()
 
 void Server::close_cfd(int cfd )
 {
+    auto p = cfdIndex.find(cfd);
+    if(p != cfdIndex.end())
+    {
+        //clientList[p->second].cfd = -1 ;
+        cfdIndex.erase(p);
+        user_offline( p->second );
+        
+    }
     FD_CLR( cfd , &read_fds);
     FD_CLR (cfd , &write_fds);
     close(cfd);  
@@ -111,6 +119,80 @@ void Server::removeLogin (vector<loginAction>::iterator i)
     cout <<"erase ok !\n";
 }
 
+void Server::user_online ( int cfdindex )
+{
+
+    auto i = loginList.begin() + cfdindex ;
+    cfdIndex.insert(make_pair( i->cfd , i->index));
+    clientList[i->index].cfd = i->cfd ;
+    clientList[i->index].sockaddr = i->sockaddr;
+    tell_clinet_onoffline (i->index , true);
+    int cfd = i->cfd ;
+    string name = clientList[i->index].name ;
+    loginList.erase(i);
+
+    // 好友列表
+    string friMsg ;
+    Packet packet ;
+    for ( auto p = clientList.begin();p!=clientList.end();p++)
+    {
+        if(p->cfd == cfd )
+            continue ;
+        if(friMsg.length() + 2 + MAXNAMELEN >= MAXDATALEN)
+        {
+            packet.fillPacket(mt::resConf,sbt::friList,friMsg.c_str(),friMsg.length());
+            serverSend(cfd , packet);
+            friMsg = "";
+        }
+        if(p->cfd  <0 )
+            friMsg +=cstate::offline;
+        else
+            friMsg +=cstate::online;
+
+        friMsg +=p->name;
+        friMsg +='|';
+
+    }
+
+    if(1)
+    {
+        packet.fillPacket(mt::resConf, sbt::friList, friMsg.c_str(), friMsg.length());
+        serverSend(cfd, packet);
+        friMsg = "";
+    }
+    
+    // 窗口颜色
+
+    int color = dataBase->get_settings(name.c_str() );
+
+    if(color == -1 )
+        // TODO  default color 
+        color = 10 ; 
+    // send color packet 
+    if(1)
+    {
+        packet.fillPacket(mt::resConf , sbt::winTheme , &color , sizeof(color));
+        serverSend(cfd , packet );
+    }
+
+    //TODO  conf friList 
+
+
+}
+
+void Server::user_leave( int index )
+{
+    close_cfd (clientList[index].cfd);
+    clientList[index].cfd = -1 ;
+}
+
+void Server::user_offline( int index )
+{
+    tell_clinet_onoffline(index , false);
+    close_cfd (clientList[index].cfd);
+    clientList[index].cfd = -1 ;
+
+}
 
 
 void Server::solveLogin(int index )
@@ -196,9 +278,10 @@ void Server::solveLogin(int index )
     else if (i->state == sbt::changepwd && p.isSubType(sbt::changepwd))
     {
         changePwdData * datap = (changePwdData *)p.msg ;
+        cout <<"更改密码为"<<datap->newPasswd<<endl;
         if(dataBase->set_passwd(i->username.c_str() , datap->newPasswd)==-1 )
         {
-            sndResponse(cfd , mt::resLogin,sbt::pwderror);
+            sndResponse(cfd , mt::resLogin,sbt::pwdChangeErr);
             removeLogin(i);
             return ;
         }
@@ -212,9 +295,9 @@ void Server::solveLogin(int index )
     else if (i->state == sbt::success && p.isSubType(sbt::success))
     {
         cout <<"success login "<<endl;
-        clientList[i->index].cfd = cfd ;
-        tell_clinet_online (i->index);
-        loginList.erase(i);
+        //clientList[i->index].cfd = cfd ;
+        user_online ( index );
+        //loginList.erase(i);
     }
 
     cout <<"state "<<hex <<(int) i->state <<' '<< endl ;
@@ -230,11 +313,14 @@ void Server::solveMsg(int index )
     int cfd = clientList[index].cfd;
     const char * fromName = clientList[index].name.c_str() ;
 
-    serverRecv( cfd , srcPacket);
+    if(serverRecv( cfd , srcPacket) <0)
+    {
+        return ;
+    }
 
 
     // we nben xiao xi qun fa
-    if(srcPacket.isGroupSnd())
+    if(srcPacket.isGroupSnd() || srcPacket.isType(mt::sndTxt , sbt::groupChat))
     {
         cout <<"sovle msg group snd "<<endl ; 
         vector <string> cfdList ; 
@@ -276,29 +362,6 @@ void Server::solveMsg(int index )
         memcpy(rcvName , srcPacket.msg,32);
         memcpy(srcPacket.msg, fromName , 32);
         sndOneMsg(index , rcvName , srcPacket);
-/*         if(nameIndex.find(rcvName)==nameIndex.end())
-        {
-            cout <<"name not exit "<<endl;
-            sndResponse(cfd , mt::resSend , sbt::idNotExit , fromName );
-        }
-        cout << "recv name =" <<rcvName <<endl ;
-        int tocfd = clientList[nameIndex[rcvName]].cfd;
-        
-        cout <<"tocfd = "<<tocfd<<endl;
-        
-        if(tocfd <0)
-        {
-            cout <<"sovle msg friend not online "<<endl;
-            sndResponse(cfd , mt::resSend , sbt::idOffline , fromName );
-        }
-        else if (tocfd != cfd ) 
-        {
-            cout <<"--ready  snd "<<endl ;
-            memcpy(srcPacket.msg , fromName , 32 );
-            serverSend(tocfd , srcPacket);
-            sndResponse(cfd , mt::resSend , sbt::success , rcvName );
-        } */
-
 
     }
     else if (srcPacket.isMainType(mt::conf))
@@ -329,7 +392,7 @@ void Server::solveMsg(int index )
 
 }
 
-void Server::tell_clinet_online (int index )
+void Server::tell_clinet_onoffline (int index ,bool isOnline)
 {
     int cfd = clientList[index].cfd ;
     const char * name = clientList[index].name.c_str();
@@ -338,7 +401,10 @@ void Server::tell_clinet_online (int index )
     strcpy(packet.msg , name );
     int len = strlen(packet.msg)+1 ;
 
-    packet.fillPacket(mt::updateList,sbt::tellOnline, name ,len);
+    if(isOnline)
+        packet.fillPacket(mt::updateList,sbt::tellOnline, name ,len);
+    else   
+        packet.fillPacket(mt::updateList,sbt::tellOffline, name ,len);
 
     for(auto i = clientList.begin() ; i!=clientList.end();i++)
     {
@@ -362,7 +428,9 @@ bool Server::newConnect()
         return false;
     }
 
-    loginList.push_back(loginAction(cfd));
+    loginList.push_back(loginAction(cfd,client_addr));
+
+
 
     cout <<"accpet ok !\n"<<endl;
 
@@ -450,12 +518,24 @@ int main(int argc, char *argv[])
 
 int Server::serverRecv(int cfd , Packet & packet)
 {
-	return socketRecv(cfd , packet);
+    if(socketRecv(cfd , packet)<0)
+    {
+        cout <<"remove cfd "<<cfd  <<endl;
+        close_cfd(cfd);
+        return -1 ;
+    }
+	return 0;
 }
 
 int Server::serverSend (int cfd , const Packet & packet )
 {
-	return socketSend (cfd , packet );
+    if(socketSend (cfd , packet )<0)
+    {
+        cout <<"remove cfd because of send error "<< cfd <<endl;
+        close(cfd);
+        return -1 ;
+    }
+	return 0;
 }
 
 int Server::sndResponse(int cfd , unsigned char maintype ,unsigned char subtype ,const char * name )

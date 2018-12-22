@@ -15,15 +15,23 @@ const bool flag_block = true;
 
 using namespace std ;
 
+namespace logt
+{
+    const unsigned char userDisconn = 0x01 ;
+    
+};
 struct ClientInfo{
     int cfd;
     string name;
     bool wake ;
+    sockaddr_in sockaddr ; 
+
     ClientInfo(string _name , int _cfd = -1){
         name = _name ;
         cfd = _cfd;
         wake = false ;
     }
+
 };
 
 struct loginAction 
@@ -31,11 +39,13 @@ struct loginAction
     int cfd ; 
     int index ; 
     string username ;
+    sockaddr_in sockaddr ; 
     unsigned char state ;
 
-    loginAction ( int _cfd )
+    loginAction ( int _cfd , const sockaddr_in & _sockaddr )
     {
         cfd = _cfd;
+        sockaddr = _sockaddr ;
         state = sbt::request;
 
     }
@@ -68,7 +78,7 @@ private :
 
     void removeLogin (vector<loginAction>::iterator i);
 
-    void tell_clinet_online (int index );
+    void tell_clinet_onoffline (int index ,bool isOnline);
 
     void close_cfd(int cfd );
 
@@ -97,6 +107,12 @@ private :
     void solveMsg(int index );
 
     int sndOneMsg(int index ,const char * rcvName , const Packet & packet );
+
+    void user_online ( int index );
+
+    void user_offline( int index );
+
+    void user_leave( int index );
 
   public:
 

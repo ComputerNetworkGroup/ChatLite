@@ -7,6 +7,10 @@
 #include<openssl/md5.h>
 #include "sql.h"
 using namespace std;
+/* #define USRNAME "u1651025"
+#define PASSWD "u1651025"
+#define HOSTNAME "localhost"
+#define DBNAME "db1651025" */
 #define USRNAME "root"
 #define PASSWD ""
 #define HOSTNAME "localhost"
@@ -179,7 +183,7 @@ int SERVER_MYSQL::get_userlist(vector<string> & ve){
    return res;
 }
 
-int SERVER_MYSQL::get_settings(char usr[]){
+int SERVER_MYSQL::get_settings(const char usr[]){
    //查询颜色，查询成功返回值，失败返回-1
    MYSQL_RES *result;
    MYSQL_ROW  row;
