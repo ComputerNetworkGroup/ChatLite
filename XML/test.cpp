@@ -1,4 +1,3 @@
-#include <iostream>
 #include "XmlLog.h"
 
 using namespace std;
@@ -6,33 +5,29 @@ using namespace std;
 int main()
 {
     XmlLog log;
-    unsigned char subType = sbt::file;
-    const char* username = "ºÃÏëË¯¾õ";
 
-    struct sockaddr_in sock;
-    sock.sin_addr.s_addr = inet_addr("192.168.80.230");
-    log.writeLogin(subType, sock, username);
-    sock.sin_addr.s_addr = inet_addr("1.168.80.230");
-    log.writeLogin(subType, sock, username);
-    sleep(1);
-    sock.sin_addr.s_addr = inet_addr("2.168.80.230");
-    log.writeLogin(subType, sock, username);
-    sock.sin_addr.s_addr = inet_addr("3.168.80.230");
-    log.writeLogin(subType, sock, username);
-    sleep(1);
-    subType = sbt::repeaton;
-    sock.sin_addr.s_addr = inet_addr("4.168.80.230");
-    log.writeLogin(subType, sock, username);
+    Packet packet;
+    packet.header.subType = sbt::request;
 
+    ClientInfo c1("jiahaolin"), c2("menglingchen");
+    c1.sockaddr.sin_addr.s_addr = inet_addr("192.168.80.230");
+    c2.sockaddr.sin_addr.s_addr = inet_addr("192.168.80.111");
 
-    struct sockaddr_in sock2;
-    sock2.sin_addr.s_addr = inet_addr("192.168.80.230");
-    log.writeDataTransform(sbt::failed,sock,sock2,"jiahaolin", "menglingchen");
+    log.writeNorm(&c1, NULL, &packet);
     sleep(1);
-    log.writeDataTransform(sbt::pwderror,sock,sock2,"jiahaolin", "wanghan");
-    log.writeDataTransform(sbt::repeatout,sock,sock2,"wanghan", "menglingchen");
-    log.writeDataTransform(sbt::success,sock,sock2,"xiaowei", "jiahaolin");
-    
+    c1.name = "wanghan";
+    log.writeNorm(&c1, NULL, &packet);
+    c1.sockaddr.sin_addr.s_addr = inet_addr("10.60.17.56");
+    packet.header.subType = sbt::idNotExit;
+    sleep(1);
+    log.writeNorm(&c1, &c2, &packet);
+    c2.name = "xiaowei";
+    sleep(1);
+    log.writeNorm(&c1, NULL, &packet);
+    log.writeNorm(&c1, &c2, &packet);
+    packet.header.subType = sbt::tellOffline;
+    sleep(1);
+
     log.saveLog();
 
     return 0;

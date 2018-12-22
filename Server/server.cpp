@@ -25,7 +25,7 @@ Server::Server()
     cfdIndex.clear();
 
     dataBase = new SERVER_MYSQL();
-
+    mylog = new XmlLog();
     serverInit();
 
 }
@@ -36,6 +36,11 @@ Server::~Server()
     loginList.clear();
     nameIndex.clear();
     cfdIndex.clear();
+    delete mylog;
+    delete dataBase ;
+
+
+
 }
 
 
@@ -139,17 +144,6 @@ void Server::user_online ( int cfdindex )
     loginList.erase(i);
 
 
-    //离线重传
-    if(g_offline_snd)
-    {
-        for(auto pack = clientList[index].offlinePacks.begin(); pack!=clientList[index].offlinePacks.end() ; pack ++)
-        {
-            serverSend(cfd , *pack);
-        }
-        clientList[index].offlinePacks.clear();
-        cout << "offline snd ok !"<<endl;
-    }
-
 
     // 好友列表
     string friMsg ;
@@ -183,7 +177,7 @@ void Server::user_online ( int cfdindex )
     
     // 窗口颜色
 
-    int color = dataBase->get_settings(name.c_str() );
+    int color = dataBase->get_color(name.c_str() );
 
     if(color == -1 )
         // TODO  default color 
@@ -193,6 +187,19 @@ void Server::user_online ( int cfdindex )
     {
         packet.fillPacket(mt::resConf , sbt::winTheme , &color , sizeof(color));
         serverSend(cfd , packet );
+    }
+
+
+
+        //离线重传
+    if(g_offline_snd)
+    {
+        for(auto pack = clientList[index].offlinePacks.begin(); pack!=clientList[index].offlinePacks.end() ; pack ++)
+        {
+            serverSend(cfd , *pack);
+        }
+        clientList[index].offlinePacks.clear();
+        cout << "offline snd ok !"<<endl;
     }
 
     //TODO  conf friList 
@@ -215,11 +222,13 @@ void Server::user_offline( int index )
 }
 
 
+// index 是 loginList 的index
 void Server::solveLogin(int index )
 {
     auto i = loginList.begin() + index ;
     int cfd = i->cfd ; 
     Packet p ;
+
 
     if(serverRecv(cfd , p )==-1)
     {
@@ -231,6 +240,7 @@ void Server::solveLogin(int index )
     if(!p.isMainType(mt::login))
     {
         cout <<"not login "<<endl ;
+        mylog ->_writeLogin( sbt::failed , i->sockaddr , i->username.c_str());
         removeLogin(i);
         return ;
     }
@@ -249,6 +259,7 @@ void Server::solveLogin(int index )
         {
             cout <<"not exit user name  "<<endl ;
             sndResponse(cfd , mt::resLogin, sbt::idNotExit);
+            //mylog ->_writeLogin( sbt::failed , i->sockaddr , i->name.c_str());
             removeLogin(i);
             return ;
         }
@@ -345,9 +356,8 @@ void Server::solveMsg(int index )
         cout <<"sovle msg group snd "<<endl ; 
         vector <string> cfdList ; 
 
-        // TODO   get cfd List
 
-        if(strcmp (srcPacket.msg , SNDALL)==0)
+        if(srcPacket.isType(mt::sndTxt , sbt::groupChat))
         {
             for(auto j = clientList.begin();j!=clientList.end();j++)
             {
@@ -380,8 +390,9 @@ void Server::solveMsg(int index )
         cout <<"--sovle msg  snd "<<endl ;
         char rcvName [32];
         memcpy(rcvName , srcPacket.msg,32);
-        memcpy(srcPacket.msg, fromName , 32);
-        sndOneMsg(index , rcvName , srcPacket);
+        alterTxtPack(desPacket , srcPacket , fromName );
+        //memcpy(srcPacket.msg, fromName , 32);
+        sndOneMsg(index , rcvName , desPacket);
 
     }
     else if (srcPacket.isMainType(mt::conf))
@@ -390,13 +401,82 @@ void Server::solveMsg(int index )
         switch (srcPacket.header.subType)
         {
             case (sbt::winTheme):
+            {
+                int value ;
+                memcpy(&value , srcPacket.msg , 4 );
+
+                dataBase -> set_color(clientList[index].name.c_str() , value );
+
+                cout <<"set ok !"<<endl;
+
+                break;
+
+            }
                 //int setColor = 
                 //dataBase->set_settings( clientList[index].name , )
-                break;
         
-            case (sbt::hisNum):
-                break ;
+            case (sbt::hisMsg):
+            {
+                vector<string> hisMsgs;
+                const char *srcName = clientList[index].name.c_str();
+                const char *desName = srcPacket.msg ;
 
+                int num;
+                
+                num = dataBase->get_msgnum(clientList[index].name.c_str());
+
+                if(num <=0)
+                {
+                    cout <<"default is null "<<endl;
+                    num = 100 ;
+                }
+
+                cout <<"num = "<<num<<endl;
+
+                int totalNum = dataBase->get_msglist(srcName, desName, num, hisMsgs);
+
+
+                string msgbuff = "";
+
+                for (int i = 0; i < hisMsgs.size() && i < num; i++)
+                {
+                    if (msgbuff.length() + hisMsgs[i].length() +10  >= MAXDATALEN)
+                    {
+                        desPacket.fillPacket(mt::resConf, sbt::hisMsg, msgbuff.c_str(), msgbuff.length());
+                        serverSend(cfd, desPacket);
+                        msgbuff = "";
+                    }
+                    msgbuff += hisMsgs[i];
+                    msgbuff += '|';
+                }
+
+                if (1)
+                {
+                    desPacket.fillPacket(mt::resConf, sbt::hisMsg, msgbuff.c_str(), msgbuff.length());
+                    serverSend(cfd, desPacket);
+                    msgbuff = "";
+                }
+
+                break;
+            }
+
+            case (sbt::fontColor):
+            {
+                int value ;
+                memcpy(&value , srcPacket.msg , 4 );
+
+                dataBase -> set_fontcolor(clientList[index].name.c_str() , value );
+                break ;
+            }
+
+            case (sbt::fontSize):
+             {
+                int value ;
+                memcpy(&value , srcPacket.msg , 4 );
+
+                dataBase -> set_fontsize(clientList[index].name.c_str() , value );
+                break ;
+             }
             
             default:
                 break;
@@ -546,11 +626,15 @@ int Server::serverRecv(int cfd , Packet & packet)
         close_cfd(cfd);
         return -1 ;
     }
+
+
+
 	return 0;
 }
 
 int Server::serverSend (int cfd , const Packet & packet )
 {
+    //mylog->writeLogin( )
     if(socketSend (cfd , packet )<0)
     {
         cout <<"remove cfd because of send error "<< cfd <<endl;
@@ -570,6 +654,7 @@ int Server::sndResponse(int cfd , unsigned char maintype ,unsigned char subtype 
         strcpy( p.msg , name );
     }
 	fillPacketHeader(p.header,maintype, subtype, len );
+
 
 	return socketSend(cfd , p);
 }
@@ -593,14 +678,27 @@ int Server::alterPack( Packet &  desPack , Packet & srcPack , const char * srcId
 	return 0 ;
 }
 
-int Server::alterTxtPack( Packet &  desPack , Packet & srcPack , const char * srcId )
+int Server::alterTxtPack( Packet &  desPack ,  Packet & srcPack , const char * srcId )
 {
 	int idNum = (int )srcPack.header.subType ;
+
+    if(idNum ==0 )
+    {
+        memcpy (&desPack , &srcPack , sizeof(srcPack));
+        return 0;
+    }
+
 	int idLen = idNum * MAXNAMELEN ;
 	
-	int txtLen = getPacketLen(srcPack) - idLen ;
+	int txtLen = getPacketLen(srcPack) - idLen -4;
 	
-	strcpy (desPack.msg , srcId );
+    //TODO
+    char newsrcId[MAXNAMELEN] ;
+
+    strcpy(newsrcId , srcId );
+    strcat (newsrcId , "|");
+
+    strcpy (desPack.msg , newsrcId );
 	strcpy(desPack.msg+MAXNAMELEN , srcPack.msg + idLen);
 
 	fillPacketHeader(desPack.header,srcPack.header.mainType,srcPack.header.subType,txtLen +MAXNAMELEN );
@@ -612,6 +710,8 @@ int Server::alterFileHeaderPack(Packet & desPack , Packet & srcPack , const char
 {
 	memcpy( &desPack , & srcPack , sizeof(desPack));
 	
+
+    //TODO
 	fileHeader * fhp = (fileHeader *) desPack.msg;
 	strcpy(fhp->friName , srcId );
 
@@ -622,6 +722,8 @@ int Server::alterFileDataPack (Packet & desPack , Packet & srcPack , const char 
 {
 	memcpy( &desPack , & srcPack , sizeof(desPack));
 	
+
+    //TODO
 	fileData * fdp = (fileData *) desPack.msg;
 	strcpy(fdp->friName , srcId );
 
@@ -652,7 +754,11 @@ int Server::sndOneMsg(int index ,const char * rcvName , const Packet & packet )
         else {
             cout <<"offline snd "<<endl;
             clientList[rcvIndex].offlinePacks.push_back(packet);
-            sndResponse(cfd, mt::resSend, sbt::offlineSnd, rcvName);   
+            sndResponse(cfd, mt::resSend, sbt::offlineSnd, rcvName);
+            if(packet.header.mainType==mt::sndTxt)
+            {
+                dataBase->sql_update_msg(fromName , rcvName , packet.msg+32);   
+            }
         }
     }
     else if (tocfd != cfd ) 

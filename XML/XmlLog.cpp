@@ -54,6 +54,8 @@ void XLLogin::setItem(const logBuf &buffer)
     setLinkNode(xItem, xType, buffer.type);
 
     setLinkNode(xItem, xTime, buffer.time);
+
+
 }
 
 
@@ -109,7 +111,6 @@ void XLDataTransform::setItem(const dataBuf &buffer)
 
 XmlLog::XmlLog()
 {
-    gettimeofday(&start, NULL); 
     xlLogin = new XLLogin;
     xlLogin->setLogin();
     xlDataTransform = new XLDataTransform;
@@ -124,27 +125,27 @@ XmlLog::~XmlLog()
     mapType.clear();
 }
 
-void XmlLog::writeLogin(unsigned char subType, struct sockaddr_in &sockAddr, const char* username)
+void XmlLog::_writeLogin(const unsigned char subType, const struct sockaddr_in &sockAddr, const char* username)
 {
-    struct timeval end;
-    gettimeofday(&end, NULL);
-    int t = end.tv_sec - start.tv_sec;
+    gettimeofday(&timePresent, NULL);  
+    strftime(timeBuf, sizeof(timeBuf)-1, "%Y-%m-%d %H:%M:%S", localtime(&timePresent.tv_sec));  
 
     logBuf buf;
     strcpy(buf.ip, inet_ntoa(sockAddr.sin_addr));
     strcpy(buf.username, username);
     strcpy(buf.type, mapType[subType].c_str());
-    strcpy(buf.time, itoa(t));
+    strcpy(buf.time, timeBuf);
     strcat(buf.time, "s");
+
     
     xlLogin->setItem(buf);
+    saveLog();
 }
 
-void XmlLog::writeDataTransform(unsigned char subType, struct sockaddr_in &sndSock, struct sockaddr_in &recvSock, const char* sndUsername, const char* recvUsername)
+void XmlLog::_writeDataTransform(const unsigned char subType, const struct sockaddr_in &sndSock, const struct sockaddr_in &recvSock, const char* sndUsername, const char* recvUsername)
 {
-    struct timeval end;
-    gettimeofday(&end, NULL);
-    int t = end.tv_sec - start.tv_sec;
+    gettimeofday(&timePresent, NULL);  
+    strftime(timeBuf, sizeof(timeBuf)-1, "%Y-%m-%d %H:%M:%S", localtime(&timePresent.tv_sec));  
 
     dataBuf buf;
     strcpy(buf.sndIp, inet_ntoa(sndSock.sin_addr));
@@ -152,10 +153,35 @@ void XmlLog::writeDataTransform(unsigned char subType, struct sockaddr_in &sndSo
     strcpy(buf.recvIp, inet_ntoa(recvSock.sin_addr));
     strcpy(buf.recvUsername, recvUsername);
     strcpy(buf.type, mapType[subType].c_str());
-    strcpy(buf.time, itoa(t));
+    strcpy(buf.time, timeBuf);
     strcat(buf.time, "s");
     
     xlDataTransform->setItem(buf); 
+    saveLog();
+
+}
+
+
+// void XmlLog::writeNorm(const ClientInfo* sndClient, const ClientInfo* recvClient, const Packet* pack)
+// {
+//     if(recvClient == NULL ||  pack->header.mainType == mt::login ) //pack->isMainType(mt::login)
+//         _writeLogin(pack->header.subType, sndClient->sockaddr, sndClient->name.c_str());
+//     else{
+//         _writeDataTransform(pack->header.subType, sndClient->sockaddr, recvClient->sockaddr, sndClient->name.c_str(), recvClient->name.c_str());
+//     }
+//     saveLog();
+// }
+
+void XmlLog::writeLogin(const loginAction& logAct, const Packet& pack)
+{
+    _writeLogin(pack.header.subType, logAct.sockaddr, logAct.username.c_str());
+    // saveLog();
+}
+
+
+void XmlLog::writeError(const ClientInfo& sndClient, unsigned char erroType)
+{
+
 }
 
 bool XmlLog::saveLog()
@@ -175,7 +201,14 @@ void XmlLog::initMap()
     mapType[sbt::success] = "验证成功";
     mapType[sbt::pwderror] = "密码错误";
     mapType[sbt::repeaton] = "新上线重复登陆";
-    mapType[sbt::repeatout] = "强制下线重复登陆";
+    mapType[sbt::repeatoff] = "强制下线重复登陆";
     // mapType[sbt::sndTxt] = "发送文本";
     mapType[sbt::file] = "发送文件";
+
+    mapType[sbt::friList] = "未定义mapType";
+    mapType[sbt::hisNum] = "未定义mapType";
+    mapType[sbt::myDefault] = "未定义mapType";
+    mapType[sbt::tellOffline] = "未定义mapType";
+    mapType[sbt::tellOnline] = "未定义mapType";
+    mapType[sbt::winTheme] = "未定义mapType";
 }

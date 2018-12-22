@@ -40,7 +40,8 @@
 ---|:--:|:---:
 更改主题|0x21(conf)| 0x01(winTheme)
 更改历史长度|0x21(conf)| 0x03(hisNum)
-
+更改字体颜色|0x21(conf)| 0x04 (fontColor)
+更改字体大小|0x21(conf)| 0x05 (fontSize)
 #### 报文信息
 
 * 32字节的char型 （上线或下线的用户名）

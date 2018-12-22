@@ -22,23 +22,30 @@ SERVER_MYSQL();
 //}
 
 
-int check_user(const char usr[],char passwd[]);
+int check_user(const char usr[],const char passwd[]);
 
-int create_user(char usr[],char passwd[]);
+int create_user(const char usr[],const char passwd[]);
 
-int need_set_passwd(char usr[]);
+int need_set_passwd(const char usr[]);
 
-int set_passwd(const char usr[],char passwd[]);
+int set_passwd(const char usr[],const char passwd[]);
 
 int get_userlist(std::vector<std::string> &ve);
 
-int get_settings(const char usr[]);
+int get_color(const char usr[]);
+int set_color(const char usr[],int settings);
 
-int set_settings(char usr[],int settings);
+int get_fontcolor(const char usr[]);
+int set_fontcolor(const char usr[],int settings);
 
+int get_msgnum(const char usr[]);
+int set_msgnum(const char usr[],int settings);
+
+int get_fontsize(const char usr[]);
+int set_fontsize(const char usr[],int settings);
 
 int sql_update_msg(const char send_usr[],const char recv_usr[],const char msg[]);
-int sql_update_broadcast(char send_usr[],char msg[]);
-int get_msglist(char from_id[],char to_id[],int num,std::vector<std::string> &ve);
+int sql_update_broadcast(const char send_usr[],const char msg[]);
+int get_msglist(const char from_id[],const char to_id[],int num,std::vector<std::string> &ve);
 int test_db();
 };

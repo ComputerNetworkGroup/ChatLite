@@ -1,3 +1,4 @@
+#pragma once 
 #include <iostream>
 #include <fstream>
 #include <time.h>
@@ -79,6 +80,9 @@ namespace sbt
 	const unsigned char winTheme = 0x01;
 	const unsigned char friList = 0x02 ;
 	const unsigned char hisNum = 0x03 ;
+	const unsigned char fontColor = 0x04 ;
+	const unsigned char fontSize = 0x05;
+	const unsigned char hisMsg = 0x06 ;
 
 	const unsigned char tellOnline = 0x01 ;
 	const unsigned char tellOffline = 0x02 ;
@@ -191,6 +195,23 @@ struct ClientInfo{
         offlinePacks.clear();
     }
 
+};
+
+struct loginAction 
+{
+    int cfd ; 
+    int index ; 
+    string username ;
+    sockaddr_in sockaddr ; 
+    unsigned char state ;
+
+    loginAction ( int _cfd , const sockaddr_in & _sockaddr )
+    {
+        cfd = _cfd;
+        sockaddr = _sockaddr ;
+        state = sbt::request;
+
+    }
 };
 
 

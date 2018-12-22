@@ -27,7 +27,7 @@ int socketSend (int cfd , const Packet & packet)
 	char * buff = (char *) &packet ;
 	while(totalLen <msgLen)
 	{
-		setTime(timeOut , 1 , 0 );
+		setTime(timeOut , 5 , 0 );
 		fds_cpy = fds ;
 
 		switch(select(cfd+1, NULL , &fds_cpy,NULL,&timeOut))
@@ -51,6 +51,7 @@ int socketSend (int cfd , const Packet & packet)
 		}
 
 	}
+	cout <<"mt sbt "<<hex<< (int)packet.header.mainType <<' '<<(int)packet.header.subType<<endl;
 	cout << "send ok  snd len = "<< sndLen << endl ;
 	return 0;
 }
@@ -71,7 +72,7 @@ int socketRecv(int cfd , Packet & packet)
 	while(totalLen <msgLen)
 	{
 		FD_SET(cfd , &fdset) ;
-		setTime(timeOut , 1 ,0 );
+		setTime(timeOut , 5 ,0 );
 
 		switch(select(cfd+1, &fdset, NULL, NULL, &timeOut))
 		{
@@ -99,7 +100,7 @@ int socketRecv(int cfd , Packet & packet)
 		}
 	}
 
-
+	cout <<"mt sbt "<<hex<<(int) packet.header.mainType <<' '<<(int)packet.header.subType<<endl;
 	cout << "recv ok totalLen  "<< dec<<totalLen <<endl;
 	return 0;
 }

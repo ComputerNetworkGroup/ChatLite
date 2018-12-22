@@ -1,5 +1,7 @@
 #include "./lib/tinyxml.h"
 #include "../common/common.h"
+#include "../common/mypacket.h"
+//#include "../Server/server.h"
 #include <iostream>
 #include <cstdlib>
 #include <map>
@@ -65,7 +67,8 @@ private:
 
     XLLogin *xlLogin;
     XLDataTransform *xlDataTransform;
-    struct timeval start;
+    struct timeval timePresent;
+    char timeBuf[32];
     std::map<unsigned char, string>mapType;
 
 
@@ -74,16 +77,22 @@ public:
     XmlLog();
     ~XmlLog();
 
-    void writeLogin(unsigned char subType, struct sockaddr_in &sockAddr, const char* username = "");
+    void _writeLogin(const unsigned char , const struct sockaddr_in &, const char*  = "");
 
-    void writeDataTransform(unsigned char subType, struct sockaddr_in &sndSock, struct sockaddr_in &recvSock, const char* sndUsername, const char* recvUsername);
+    void _writeDataTransform(const unsigned char , const struct sockaddr_in &, const struct sockaddr_in &, const char* , const char* );
+
+    void writeLogin(const loginAction &, const Packet &);
+
+    void writeError(const ClientInfo &, const unsigned char );
+
+    void writeNorm(const ClientInfo&, const ClientInfo&, const Packet&);
 
     bool saveLog();
     void initMap();
 };
 
-static void setText(TiXmlElement*& element, const char* str);
+static void setText(TiXmlElement*& , const char* );
 
-static void setLinkNode(TiXmlElement*& father,TiXmlElement*& child, const char*str);
+static void setLinkNode(TiXmlElement*& ,TiXmlElement*& , const char*);
 
 static char* itoa(int id);

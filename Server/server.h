@@ -9,6 +9,7 @@
 #include "../common/common.h"
 #include "../mysql/sql.h"
 #include "../common/mypacket.h"
+#include "../XML/XmlLog.h"
 
 #define MAX_CONNECT 1000
 #define MAX_LISTEN 1000
@@ -23,22 +24,6 @@ namespace logt
 };
 
 
-struct loginAction 
-{
-    int cfd ; 
-    int index ; 
-    string username ;
-    sockaddr_in sockaddr ; 
-    unsigned char state ;
-
-    loginAction ( int _cfd , const sockaddr_in & _sockaddr )
-    {
-        cfd = _cfd;
-        sockaddr = _sockaddr ;
-        state = sbt::request;
-
-    }
-};
 
 class Server 
 {
@@ -47,6 +32,7 @@ private :
     int max_fd, server_fd;
     fd_set read_fds, write_fds;
 
+    int senderIndex ;
 
     vector<ClientInfo> clientList;
 
@@ -59,6 +45,8 @@ private :
     map<int, int> cfdIndex;
 
     SERVER_MYSQL * dataBase;
+
+    XmlLog * mylog ; 
 
 
     bool newConnect ();
