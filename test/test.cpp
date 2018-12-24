@@ -80,13 +80,18 @@ int main(int argc, char** argv)
 
 				socketSend(cfd, packet);
 				
-				if(clientRecv(cfd , packet)>=0)
+				while(clientRecv(cfd , packet)>=0)
 				{
 					cout << "maintype " << hex << (int)packet.header.mainType << endl;
 					cout << "subtype " << hex << (int)packet.header.subType << endl;
 					cout << dec;
 				}
 
+			}
+
+			else if (strcmp (argv[5] , "file ") ==0 )
+			{
+				
 			}
 
 			else 

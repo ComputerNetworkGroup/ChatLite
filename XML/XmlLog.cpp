@@ -136,6 +136,34 @@ void XmlLog::_writeLogin(const unsigned char subType, const struct sockaddr_in &
     strcat(buf.time, "s");
     
     xlLogin->setItem(buf);
+    saveLog();
+
+}
+
+void XmlLog::_writeLogin(const char * msg , const struct sockaddr_in &sockAddr, const char* username)
+{
+    cout <<"-------------"<<msg<<endl;
+    gettimeofday(&timePresent, NULL);  
+    strftime(timeBuf, sizeof(timeBuf)-1, "%Y-%m-%d %H:%M:%S", localtime(&timePresent.tv_sec));  
+
+    logBuf buf;
+
+/*     strcpy(buf.ip, "i.sin_addr)");
+    strcpy(buf.username, "username");
+    strcpy(buf.type, "msg");
+    strcpy(buf.time, "timeBuf");
+    strcat(buf.time, "s"); */
+
+
+    strcpy(buf.ip, inet_ntoa(sockAddr.sin_addr));
+    strcpy(buf.username, username);
+    strcpy(buf.type, msg);
+    strcpy(buf.time, timeBuf);
+    strcat(buf.time, "s");
+    
+    xlLogin->setItem(buf);
+    saveLog();
+    cout <<"-------------end "<<endl;
 }
 
 void XmlLog::_writeDataTransform(const unsigned char subType, const struct sockaddr_in &sndSock, const struct sockaddr_in &recvSock, const char* sndUsername, const char* recvUsername)
@@ -150,9 +178,46 @@ void XmlLog::_writeDataTransform(const unsigned char subType, const struct socka
     strcpy(buf.recvUsername, recvUsername);
     strcpy(buf.type, mapType[subType].c_str());
     strcpy(buf.time, timeBuf);
+
     strcat(buf.time, "s");
     
     xlDataTransform->setItem(buf); 
+    saveLog();
+}
+
+
+void XmlLog::_writeDataTransform(const  char * msg, const struct sockaddr_in &sndSock, const struct sockaddr_in &recvSock, const char* sndUsername, const char* recvUsername)
+{
+    gettimeofday(&timePresent, NULL);  
+    strftime(timeBuf, sizeof(timeBuf)-1, "%Y-%m-%d %H:%M:%S", localtime(&timePresent.tv_sec));  
+
+    dataBuf buf;
+    strcpy(buf.sndIp, inet_ntoa(sndSock.sin_addr));
+    strcpy(buf.sndUsername, sndUsername);
+    strcpy(buf.recvIp, inet_ntoa(recvSock.sin_addr));
+    strcpy(buf.recvUsername, recvUsername);
+    strcpy(buf.type, msg);
+    strcpy(buf.time, timeBuf);
+
+    strcat(buf.time, "s");
+    
+    xlDataTransform->setItem(buf); 
+    saveLog();
+}
+
+
+void XmlLog::writeNorm(const ClientInfo* sndClient, const ClientInfo* recvClient, const Packet* pack)
+{
+    if(recvClient == NULL)
+        _writeLogin(pack->header.subType, sndClient->sockaddr, sndClient->name.c_str());
+    else{
+        _writeDataTransform(pack->header.subType, sndClient->sockaddr, recvClient->sockaddr, sndClient->name.c_str(), recvClient->name.c_str());
+    }
+}
+
+void XmlLog::writeError(const ClientInfo* sndClient, unsigned char erroType)
+{
+
 }
 
 
@@ -174,27 +239,29 @@ bool XmlLog::saveLog()
 {
     bool flag1 = xlLogin->doc.SaveFile("log_in.xml");
 
-    bool flag2 = xlDataTransform->doc.SaveFile("data_transform.xml");
+    //bool flag2 = xlDataTransform->doc.SaveFile("data_transform.xml");
 
-    if(flag1 && flag2)
+    if(flag1 )
         return true;
     return false;
 }
 
 void XmlLog::initMap()
 {
-    mapType[sbt::failed] = "ÑéÖ¤Ê§°Ü";
-    mapType[sbt::success] = "ÑéÖ¤³É¹¦";
-    mapType[sbt::pwderror] = "ÃÜÂë´íÎó";
-    mapType[sbt::repeaton] = "ĞÂÉÏÏßÖØ¸´µÇÂ½";
-    mapType[sbt::repeatoff] = "Ç¿ÖÆÏÂÏßÖØ¸´µÇÂ½";
-    // mapType[sbt::sndTxt] = "·¢ËÍÎÄ±¾";
-    mapType[sbt::file] = "·¢ËÍÎÄ¼ş";
+    mapType[sbt::failed] = "éªŒè¯å¤±è´¥";
+    mapType[sbt::success] = "éªŒè¯æˆåŠŸ";
+    mapType[sbt::pwderror] = "å¯†ç é”™è¯¯";
+    mapType[sbt::repeaton] = "æ–°ä¸Šçº¿é‡å¤ç™»é™†";
+    mapType[sbt::repeatoff] = "å¼ºåˆ¶ä¸‹çº¿é‡å¤ç™»é™†";
 
-    mapType[sbt::friList] = "Î´¶¨ÒåmapType";
-    mapType[sbt::hisNum] = "Î´¶¨ÒåmapType";
-    mapType[sbt::myDefault] = "Î´¶¨ÒåmapType";
-    mapType[sbt::tellOffline] = "Î´¶¨ÒåmapType";
-    mapType[sbt::tellOnline] = "Î´¶¨ÒåmapType";
-    mapType[sbt::winTheme] = "Î´¶¨ÒåmapType";
+    //mapType[sbt::sndTxt] = "å‘é€æ–‡æœ¬";
+
+    mapType[sbt::file] = "å‘é€æ–‡ä»¶";
+
+    mapType[sbt::friList] = "æœªå®šä¹‰mapType";
+    mapType[sbt::hisNum] = "æœªå®šä¹‰mapType";
+    mapType[sbt::myDefault] = "æœªå®šä¹‰mapType";
+    mapType[sbt::tellOffline] = "æœªå®šä¹‰mapType";
+    mapType[sbt::tellOnline] = "æœªå®šä¹‰mapType";
+    mapType[sbt::winTheme] = "æœªå®šä¹‰mapType";
 }

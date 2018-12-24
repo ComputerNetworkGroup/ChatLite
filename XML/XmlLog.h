@@ -25,8 +25,8 @@ class XmlLog;
 struct logBuf{
     char ip[32];
     char username[32];
-    char type[16];
-    char time[16];
+    char type[64];
+    char time[32];
 };
 
 class XLLogin{
@@ -51,8 +51,8 @@ struct dataBuf{
     char sndUsername[32];
     char recvIp[32];
     char recvUsername[32];
-    char type[16];
-    char time[16];
+    char type[64];
+    char time[32];
 };
 
 class XLDataTransform{
@@ -92,12 +92,18 @@ public:
 
     void _writeLogin(const unsigned char , const struct sockaddr_in &, const char*  = "");
 
+
+    void _writeLogin(const  char  *, const struct sockaddr_in &, const char*  = "");
+
     void _writeDataTransform(const unsigned char , const struct sockaddr_in &, const struct sockaddr_in &, const char* , const char* );
 
     
     void writeNorm(const ClientInfo* , const ClientInfo* , const Packet* );
 
     void writeError(const ClientInfo* , const unsigned char );
+
+    void _writeDataTransform(const  char * msg, const struct sockaddr_in &sndSock, const struct sockaddr_in &recvSock, const char* sndUsername, const char* recvUsername);
+
 
     bool saveLog();
     void initMap();

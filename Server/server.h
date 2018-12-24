@@ -4,10 +4,12 @@
 #include <vector>
 #include <set>
 #include <map>
+#include <queue>
 #include <sys/prctl.h>
 #include "../common/common.h"
 #include "../mysql/sql.h"
 #include "../common/mypacket.h"
+#include "../XML/XmlLog.h"
 
 #define MAX_CONNECT 1000
 #define MAX_LISTEN 1000
@@ -15,31 +17,13 @@ const bool flag_block = true;
 
 using namespace std ;
 
-struct ClientInfo{
-    int cfd;
-    string name;
-    bool wake ;
-    ClientInfo(string _name , int _cfd = -1){
-        name = _name ;
-        cfd = _cfd;
-        wake = false ;
-    }
-};
-
-struct loginAction 
+namespace logt
 {
-    int cfd ; 
-    int index ; 
-    string username ;
-    unsigned char state ;
+    const unsigned char userDisconn = 0x01 ;
 
-    loginAction ( int _cfd )
-    {
-        cfd = _cfd;
-        state = sbt::request;
-
-    }
 };
+
+
 
 class Server 
 {
@@ -48,6 +32,7 @@ private :
     int max_fd, server_fd;
     fd_set read_fds, write_fds;
 
+    int senderIndex ;
 
     vector<ClientInfo> clientList;
 
@@ -61,6 +46,8 @@ private :
 
     SERVER_MYSQL * dataBase;
 
+    XmlLog  mylog ; 
+
 
     bool newConnect ();
 
@@ -68,7 +55,7 @@ private :
 
     void removeLogin (vector<loginAction>::iterator i);
 
-    void tell_clinet_online (int index );
+    void tell_clinet_onoffline (int index ,bool isOnline);
 
     void close_cfd(int cfd );
 
@@ -97,6 +84,12 @@ private :
     void solveMsg(int index );
 
     int sndOneMsg(int index ,const char * rcvName , const Packet & packet );
+
+    void user_online ( int index );
+
+    void user_offline( int index );
+
+    void user_leave( int index );
 
   public:
 

@@ -11,17 +11,19 @@ int main(int argc, char* argv[])
     while(1){
         char id[100],id2[100],msg[100];
         int num;
-        cin>>id>>id2>>num;
+        cin>>id;
 
-        if(dbsql.get_msglist(id,id2,num,ve)>=0){
-            for(auto i:ve){
-                cout<<i<<endl;
-            }
-            //cout<<color<<endl;
-            cout<<1<<endl;
-        }
-        else 
-            cout<<"-1"<<endl;
+        cin>>num;
+        dbsql.set_fontcolor(id,num);
+        cout<<1<<"   "<<dbsql.get_fontcolor(id)<<endl;
+
+        cin>>num;
+        dbsql.set_color(id,num);
+        cout<<2<<"   "<<dbsql.get_color(id)<<endl;
+
+        cin>>num;
+        dbsql.set_msgnum(id,num);
+        cout<<3<<"   "<<dbsql.get_msgnum(id)<<endl;
     }
 
     return 0;

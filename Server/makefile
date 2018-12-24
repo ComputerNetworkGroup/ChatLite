@@ -1,7 +1,6 @@
 TARGET := server
 
-RELY= ../common/mypacket.cpp ../common/common.cpp ../mysql/sql.cpp
-
+RELY= ../common/mypacket.cpp ../common/common.cpp ../mysql/sql.cpp ../XML/lib/tinyxml.cpp ../XML/lib/tinystr.cpp ../XML/lib/tinyxmlerror.cpp ../XML/lib/tinyxmlparser.cpp ../XML/XmlLog.cpp
 main: $(TARGET)
 
 server: server.cpp  $(RELY)
