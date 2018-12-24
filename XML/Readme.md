@@ -10,10 +10,21 @@
 存储Login日志类中进行通讯的信息
 | 变量      | 作用                      |
 |-----------------|---------------------------|
-| ip[32]        | 指向XLLogin的指针         |
-| username[32] | 指向xlDataTransform的指针 |
-| type[16]        | 指向XLLogin的指针         |
-| time[16] | 指向xlDataTransform的指针 |
+| ip[32];      | ip参数字符串         |
+| username[32] | username参数字符串 |
+| type[64];        | 报文种类参数字符串         |
+| time[32]; | 时间参数字符串 |
+
+## 2. dataBuf
+存储DataTransform中进行通讯的信息
+| 变量      | 作用                      |
+|-----------------|---------------------------|
+| sndIp[32];      | 发送者ip参数字符串         |
+| sndUsername[32] | 发送者username参数字符串 |
+| recvIp[32];        | 接收者ip参数字符串         |
+| recvUsername[32]; | 接收者username参数字符串 |
+| type[64];        | 报文种类参数字符串         |
+| time[32]; | 时间参数字符串 |
 
 # CLass
 
