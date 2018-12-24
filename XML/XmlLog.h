@@ -7,6 +7,19 @@
 #include <map>
 #include <sys/time.h>
 
+struct ClientInfo{
+    int cfd;
+    string name;
+    bool wake ;
+    sockaddr_in sockaddr; 
+    
+    ClientInfo(string _name , int _cfd = -1){
+        name = _name ;
+        cfd = _cfd;
+        wake = false ;
+    }
+};
+
 class XmlLog;
 
 struct logBuf{
@@ -79,6 +92,7 @@ public:
 
     void _writeLogin(const unsigned char , const struct sockaddr_in &, const char*  = "");
 
+
     void _writeLogin(const  char  *, const struct sockaddr_in &, const char*  = "");
 
     void _writeDataTransform(const unsigned char , const struct sockaddr_in &, const struct sockaddr_in &, const char* , const char* );
@@ -89,6 +103,7 @@ public:
     void writeError(const ClientInfo* , const unsigned char );
 
     void _writeDataTransform(const  char * msg, const struct sockaddr_in &sndSock, const struct sockaddr_in &recvSock, const char* sndUsername, const char* recvUsername);
+
 
     bool saveLog();
     void initMap();
