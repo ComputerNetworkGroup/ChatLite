@@ -25,7 +25,7 @@ Server::Server()
     cfdIndex.clear();
 
     dataBase = new SERVER_MYSQL();
-    mylog = new XmlLog();
+
     serverInit();
 
 }
@@ -36,7 +36,6 @@ Server::~Server()
     loginList.clear();
     nameIndex.clear();
     cfdIndex.clear();
-    delete mylog;
     delete dataBase ;
 
 
@@ -148,6 +147,8 @@ void Server::user_online ( int cfdindex )
     // 好友列表
     string friMsg ;
     Packet packet ;
+    cout << "get-friList"<<endl;
+    mylog._writeLogin("get-friList",clientList[index].sockaddr,clientList[index].name.c_str());
     for ( auto p = clientList.begin();p!=clientList.end();p++)
     {
         if(p->cfd == cfd )
@@ -179,6 +180,8 @@ void Server::user_online ( int cfdindex )
 
     int color = dataBase->get_color(name.c_str() );
 
+    mylog._writeLogin("set-themecolor",clientList[index].sockaddr,clientList[index].name.c_str());
+
     if(color == -1 )
         // TODO  default color 
         color = 10 ; 
@@ -189,17 +192,42 @@ void Server::user_online ( int cfdindex )
         serverSend(cfd , packet );
     }
 
+    int fontcolor = dataBase->get_fontcolor(name.c_str());
+    if(fontcolor == -1 )    
+        fontcolor = 10 ;
+    if(1)
+    {
+        packet.fillPacket(mt::resConf , sbt::fontColor , &fontcolor , sizeof(fontcolor));
+        serverSend(cfd , packet );
+    }
+
+    int fontSize = dataBase->get_fontsize(name.c_str());
+    if(fontSize == -1 )
+        fontSize = 20;
+
+    if(1)
+    {
+        packet.fillPacket(mt::resConf , sbt::fontSize , &fontcolor , sizeof(fontcolor));
+        serverSend(cfd , packet );
+    }
+
+    
 
 
         //离线重传
     if(g_offline_snd)
     {
-        for(auto pack = clientList[index].offlinePacks.begin(); pack!=clientList[index].offlinePacks.end() ; pack ++)
+        int i = 0;
+        for(auto pack = clientList[index].offlinePacks.begin(); pack!=clientList[index].offlinePacks.end() ; pack ++ , i++)
         {
             serverSend(cfd , *pack);
+            
+            int sndIndex = cfdIndex[cfd];
+            int rcvIndex = nameIndex[(*pack).msg];
+
+            mylog.writeNorm(&clientList[sndIndex],&clientList[rcvIndex], & (clientList[index].offlinePacks[i]));
         }
         clientList[index].offlinePacks.clear();
-        cout << "offline snd ok !"<<endl;
     }
 
     //TODO  conf friList 
@@ -240,7 +268,7 @@ void Server::solveLogin(int index )
     if(!p.isMainType(mt::login))
     {
         cout <<"not login "<<endl ;
-        mylog ->_writeLogin( sbt::failed , i->sockaddr , i->username.c_str());
+        mylog._writeLogin( "login-type-error", i->sockaddr , i->username.c_str());
         removeLogin(i);
         return ;
     }
@@ -259,7 +287,7 @@ void Server::solveLogin(int index )
         {
             cout <<"not exit user name  "<<endl ;
             sndResponse(cfd , mt::resLogin, sbt::idNotExit);
-            //mylog ->_writeLogin( sbt::failed , i->sockaddr , i->name.c_str());
+            mylog._writeLogin( "username-not-exsit", i->sockaddr , i->username.c_str());
             removeLogin(i);
             return ;
         }
@@ -270,6 +298,7 @@ void Server::solveLogin(int index )
             cout <<"not correct passwd  "<<endl ;
             sndResponse(cfd , mt::resLogin,sbt::pwderror);
             removeLogin(i);
+            mylog._writeLogin( "passwd-uncorrect" , i->sockaddr , i->username.c_str());
             return ;
         }
         // 
@@ -284,16 +313,19 @@ void Server::solveLogin(int index )
                 cout << "change passwd "<<endl;
                 i->state = sbt::changepwd;
                 sndResponse(cfd , mt::resLogin , sbt::changepwd);
+                mylog._writeLogin( "change-passwd" , i->sockaddr , i->username.c_str());
                 return ;
             }
             else if ( clientList[i->index].cfd >0)
             {
                 // debug
                 cout << i->username <<"重复登录"<<endl;
+                mylog._writeLogin( "login-repeat-off" , clientList[i->index].sockaddr , i->username.c_str());
                 sndResponse(clientList[i->index].cfd , mt::login , sbt::repeatoff);
                 close_cfd (clientList[i->index].cfd);
                 clientList[i->index].cfd = -1 ;
 
+                mylog._writeLogin( "login-repeat-on" , i->sockaddr , i->username.c_str());
                 sndResponse(cfd , mt::resLogin , sbt::repeaton);
                 i->state = sbt::success;
 
@@ -302,6 +334,7 @@ void Server::solveLogin(int index )
             {
                 i->state = sbt::success;
                 sndResponse(cfd , mt::resLogin , sbt::success);
+                mylog._writeLogin( "login-success" , i->sockaddr , i->username.c_str());
             }
 
         }
@@ -312,12 +345,14 @@ void Server::solveLogin(int index )
         cout <<"更改密码为"<<datap->newPasswd<<endl;
         if(dataBase->set_passwd(i->username.c_str() , datap->newPasswd)==-1 )
         {
+            mylog._writeLogin( "change-passwd-error" , i->sockaddr , i->username.c_str());
             sndResponse(cfd , mt::resLogin,sbt::pwdChangeErr);
             removeLogin(i);
             return ;
         }
         else 
         {
+            mylog._writeLogin( "change-passwd-ok" , i->sockaddr , i->username.c_str());
             sndResponse(cfd , mt::resLogin , sbt::success );
             i->state = sbt::success;
         }
@@ -325,6 +360,7 @@ void Server::solveLogin(int index )
     }
     else if (i->state == sbt::success && p.isSubType(sbt::success))
     {
+        mylog._writeLogin( "client-on" , i->sockaddr , i->username.c_str());
         cout <<"success login "<<endl;
         //clientList[i->index].cfd = cfd ;
         user_online ( index );
@@ -375,6 +411,7 @@ void Server::solveMsg(int index )
             }
         }
 
+
         alterTxtPack(desPacket , srcPacket , fromName );
 
         for(auto i = cfdList.begin();i!=cfdList.end();i++)
@@ -382,17 +419,6 @@ void Server::solveMsg(int index )
             sndOneMsg(index , (*i).c_str(), desPacket );
         }
 
-
-    }
-
-    else if(srcPacket.isMainType(mt::sndTxt)||srcPacket.isMainType(mt::sndFile)||srcPacket.isMainType(mt::sndFileHead))
-    {
-        cout <<"--sovle msg  snd "<<endl ;
-        char rcvName [32];
-        memcpy(rcvName , srcPacket.msg,32);
-        alterTxtPack(desPacket , srcPacket , fromName );
-        //memcpy(srcPacket.msg, fromName , 32);
-        sndOneMsg(index , rcvName , desPacket);
 
     }
     else if (srcPacket.isMainType(mt::conf))
@@ -407,7 +433,7 @@ void Server::solveMsg(int index )
 
                 dataBase -> set_color(clientList[index].name.c_str() , value );
 
-                cout <<"set ok !"<<endl;
+                cout <<"set winTheme !"<<endl;
 
                 break;
 
@@ -415,6 +441,15 @@ void Server::solveMsg(int index )
                 //int setColor = 
                 //dataBase->set_settings( clientList[index].name , )
         
+            case (sbt::hisNum):
+            {
+                int value ;
+                memcpy(&value , srcPacket.msg , 4 );
+                cout << "set hisNum "<<endl;
+                dataBase -> set_msgnum(clientList[index].name.c_str() , value );
+                break ;
+            }
+
             case (sbt::hisMsg):
             {
                 vector<string> hisMsgs;
@@ -464,7 +499,7 @@ void Server::solveMsg(int index )
             {
                 int value ;
                 memcpy(&value , srcPacket.msg , 4 );
-
+                cout << "set font color "<<endl;
                 dataBase -> set_fontcolor(clientList[index].name.c_str() , value );
                 break ;
             }
@@ -473,7 +508,7 @@ void Server::solveMsg(int index )
              {
                 int value ;
                 memcpy(&value , srcPacket.msg , 4 );
-
+                cout << "set font size "<<endl;
                 dataBase -> set_fontsize(clientList[index].name.c_str() , value );
                 break ;
              }
@@ -482,11 +517,25 @@ void Server::solveMsg(int index )
                 break;
         }
     }
-    else 
+
+    //else if(srcPacket.isMainType(mt::sndTxt)||srcPacket.isMainType(mt::sndFile)||srcPacket.isMainType(mt::sndFileHead)||srcPacket.isMainType(mt::resFileHead))
+    else
     {
+        cout <<"--------sovle msg  snd "<<endl ;
+        char rcvName [32];
+        memcpy(rcvName , srcPacket.msg,32);
+        alterTxtPack(desPacket , srcPacket , fromName );
+        //memcpy(srcPacket.msg, fromName , 32);
+        sndOneMsg(index , rcvName , desPacket);
+
+    }
+
+/*     else 
+    {
+        mylog._writeLogin( "parsing-header-error" , clientList[index].sockaddr , clientList[index].name.c_str());   
         cout <<"parsing packet header type error !"<<endl ;
         sleep(1);
-    }
+    } */
 
     return ;
     
@@ -605,6 +654,8 @@ void Server::run()
 int main(int argc, char *argv[])
 {
 
+    create_daemon();    
+
     parseCMD(argc, argv, false);
 
 	signal(SIGPIPE,SIG_IGN);
@@ -634,7 +685,6 @@ int Server::serverRecv(int cfd , Packet & packet)
 
 int Server::serverSend (int cfd , const Packet & packet )
 {
-    //mylog->writeLogin( )
     if(socketSend (cfd , packet )<0)
     {
         cout <<"remove cfd because of send error "<< cfd <<endl;
@@ -680,12 +730,22 @@ int Server::alterPack( Packet &  desPack , Packet & srcPack , const char * srcId
 
 int Server::alterTxtPack( Packet &  desPack ,  Packet & srcPack , const char * srcId )
 {
-	int idNum = (int )srcPack.header.subType ;
-
-    if(idNum ==0 )
+    int idNum ;
+    if(srcPack.isMainType(mt::sndTxt))
     {
-        memcpy (&desPack , &srcPack , sizeof(srcPack));
-        return 0;
+        idNum = (int)srcPack.header.subType;
+        if (idNum == 0)
+        {
+            memcpy(&desPack, &srcPack, sizeof(srcPack));
+            return 0;
+        }
+    }
+    else 
+    {
+        idNum = 1;
+
+        cout <<"-------------------------file snd ---------------"<<endl;
+
     }
 
 	int idLen = idNum * MAXNAMELEN ;
@@ -698,8 +758,9 @@ int Server::alterTxtPack( Packet &  desPack ,  Packet & srcPack , const char * s
     strcpy(newsrcId , srcId );
     strcat (newsrcId , "|");
 
-    strcpy (desPack.msg , newsrcId );
-	strcpy(desPack.msg+MAXNAMELEN , srcPack.msg + idLen);
+    memcpy (desPack.msg , newsrcId ,32);
+	memcpy(desPack.msg+MAXNAMELEN , srcPack.msg + idLen ,txtLen);
+
 
 	fillPacketHeader(desPack.header,srcPack.header.mainType,srcPack.header.subType,txtLen +MAXNAMELEN );
 
@@ -733,6 +794,7 @@ int Server::alterFileDataPack (Packet & desPack , Packet & srcPack , const char 
 // 发送一个数据包
 int Server::sndOneMsg(int index ,const char * rcvName , const Packet & packet )
 {
+    sockaddr_in toaddr = clientList[nameIndex[rcvName]].sockaddr ;
     int cfd = clientList[index].cfd ;
     const char * fromName = clientList[index].name.c_str();
 
@@ -749,10 +811,12 @@ int Server::sndOneMsg(int index ,const char * rcvName , const Packet & packet )
     {
         if(!g_offline_snd) {
             cout << "sovle msg friend not online " << endl;
+            mylog._writeDataTransform("not-online-reject", clientList[index].sockaddr , toaddr, clientList[index].name.c_str() , rcvName );
             sndResponse(cfd, mt::resSend, sbt::idOffline, rcvName);
         }
         else {
             cout <<"offline snd "<<endl;
+            mylog._writeDataTransform("offline-snd", clientList[index].sockaddr , toaddr, clientList[index].name.c_str() , rcvName );
             clientList[rcvIndex].offlinePacks.push_back(packet);
             sndResponse(cfd, mt::resSend, sbt::offlineSnd, rcvName);
             if(packet.header.mainType==mt::sndTxt)
@@ -763,6 +827,7 @@ int Server::sndOneMsg(int index ,const char * rcvName , const Packet & packet )
     }
     else if (tocfd != cfd ) 
     {
+        mylog._writeDataTransform("txt-pack-send", clientList[index].sockaddr , toaddr, clientList[index].name.c_str() , rcvName );
         cout <<"--ready  snd "<<endl ;
         serverSend(tocfd , packet);
         sndResponse(cfd , mt::resSend , sbt::success , rcvName );

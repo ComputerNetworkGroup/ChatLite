@@ -53,6 +53,7 @@ namespace cstate
 	const unsigned char resLogin = 0x71;
 	const unsigned char resSend = 0X72;
 	const unsigned char resConf = 0X81 ;
+	const unsigned char resFileHead =0x73;
  };
 
 namespace sbt

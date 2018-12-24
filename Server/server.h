@@ -46,7 +46,7 @@ private :
 
     SERVER_MYSQL * dataBase;
 
-    XmlLog * mylog ; 
+    XmlLog  mylog ; 
 
 
     bool newConnect ();
