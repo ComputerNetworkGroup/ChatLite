@@ -2,6 +2,8 @@
     "name": "chatlite",
     "version": "1.0.0",
     "main": "js/main.js",
+    "HOST": "10.60.102.252",
+    "PORT": 25880,
     "scripts": {
         "start": "electron .",
         "pack": "electron-packager . myClient --win --out ../ChatLite --arch=x64 --ap-version=0.01 --electron-version=3.0.12"

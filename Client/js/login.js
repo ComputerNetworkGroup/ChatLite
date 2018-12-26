@@ -3,6 +3,7 @@
 const net = require('net');
 const common = require('../js/common');
 const fs = require('fs');
+const packjson = require("../package.json");
 
 const chat_window = `
 <div id="cover" style="position:absolute; width: 100%; height: 100%; left: 0; top: 0; background: rgba:(0, 0, 0, 0.5); display: none; z-index: 100"></div>
@@ -75,7 +76,7 @@ const chat_window = `
                 <div class="level-right">
                     <div class="file" style="margin-right:5px">
                         <label class="file-label">
-                            <input class="file-input" type="file" name="resume" id="file">
+                            <input class="file-input" type="file" name="resume" id="file" onchange="getfilename()">
                             <span class="file-cta">
                                 <span class="file-icon">
                                     <i class="fas fa-upload"></i>
@@ -96,8 +97,8 @@ const chat_window = `
 </div>
 </div>
 <script>
-var file = document.getElementById("file");
-file.onchange = function () {
+function getfilename() {
+    var file = document.getElementById("file");
     if (file.files.length > 0) {
 
         console.log(file.files);
@@ -105,13 +106,13 @@ file.onchange = function () {
         document.getElementById('filename').innerHTML = file.files[0].name;
 
     }
-};
+}
 </script>
 `
 
 
-const HOST = '10.60.102.252';  //IP地址
-const PORT = 25810;               //端口号
+const HOST = packjson.HOST;  //IP地址
+const PORT = packjson.PORT;  //端口号
 
 var account_value;
 var password_value;
@@ -121,8 +122,10 @@ window.dic = new Array();
 //创建新的socket
 window.client = new net.Socket();
 
-
-var writeStream;
+//2333
+// var writeStream;
+var filename233;
+var filecount1;
 
 
 
@@ -136,7 +139,7 @@ window.client.on('error', function (err) {
 })
 
 window.BufLength = 0;
-window.Buf = new Buffer.alloc(10000);
+window.Buf = new Buffer.alloc(100000);
 
 function compare_twostr(str1, str2) {
     for (let i = 0; i < str1.length; i++) {
@@ -149,7 +152,7 @@ function compare_twostr(str1, str2) {
 
 //监听server端的write
 window.client.on('data', function (data) {
-    console.log('DATA: ' + data);
+    // console.log('DATA: ' + data);
     console.log(data.length);
     data.copy(Buf, BufLength);
     // Buf.slice(BufLength, data.length + BufLength) = data;
@@ -175,7 +178,9 @@ window.client.on('data', function (data) {
             // p.msg.slice(0, plen - 4) = Buf.slice(4, plen);
             Buf.copy(Buf, 0, p.header.slice(2, 4).readInt16BE(0), BufLength);
             BufLength = BufLength - plen;
+            console.log("*packet*");
             console.log(p);
+
             if (p.header[0] == common.mt["resLogin"]) {
                 //回应登录
                 if (p.header[1] == common.sbt["failed"]) {
@@ -369,10 +374,15 @@ window.client.on('data', function (data) {
                 if (p.header[1] == common.sbt["file"]) {
                     var username = p.msg.slice(0, 32).toString().split('|')[0];
                     var filename = p.msg.slice(32, 64).toString().split('|')[0];
-                    writeStream = fs.createWriteStream(filename);
+
+                    //2333
+                    // writeStream = fs.createWriteStream(filename);
+                    filename233 = filename;
+
                     // writeStream.setDefaultEncoding('utf8');
                     var fileid = p.msg.slice(64, 80).toString();//todo
-                    var filecount = p.msg.readInt32BE(80);
+                    filecount1 = p.msg.readInt32LE(80);
+                    console.log("!filecount! " + filecount1);
 
                     document.getElementById('sndFile').classList.add('is-active');
 
@@ -393,6 +403,8 @@ window.client.on('data', function (data) {
 
                     var file = document.getElementById("file");
 
+                    document.getElementById('sndFilePro').classList.add('is-active');
+
                     //传文件
                     var readText = fs.readFileSync(file.files[0].path);
                     console.log(typeof (readText));
@@ -406,24 +418,46 @@ window.client.on('data', function (data) {
 
                     readStream.on('data', function (data) {
                         console.log(data.length);
-                        console.log("!!!data:" + data);
+                        // console.log("!!!data:" + data);
                         console.log("ctr:" + ctr);
                         common.sndFile_middle($('p#user-chat-msg strong').text(), '1', ctr, data.length, String(data));
                         ctr++;
+                        $('#span1').text(String(Math.floor(ctr / fileCount * 100)) + '%');
+                        $('#process1').text(String(Math.floor(ctr / fileCount * 100)) + '%');
+                        $('#process1').val(String(Math.floor(ctr / fileCount * 100)));
                         if (data.length < 2048) {
                             common.fileend($('p#user-chat-msg strong').text());
                         }
                     });
+                    document.getElementById('sndFilePro').classList.remove('is-active');
+                    document.getElementById('filename').innerHTML = "Choose one file...";
+                    document.getElementById('file').value = '';
+                    document.getElementById('file').outerHTML = document.getElementById('file').outerHTML;
                 }
             }
             else if (p.header[0] == common.mt["sndFile"]) {
                 if (p.header[1] == common.sbt["success"]) {
-                    writeStream.end();
+                    //2333
+                    // writeStream.end();
+                    document.getElementById('rcvFilePro').classList.remove('is-active');
                 }
                 else {
-                    console.log("***" + p.msg.slice(52).toString());
+                    // console.log("***" + p.msg.slice(52).toString());
                     console.log("###" + plen);
-                    writeStream.write(p.msg.slice(52, plen - 4));
+                    //2333
+                    // writeStream.write(p.msg.slice(52, plen - 4));
+
+                    var ctr = p.msg.readInt32LE(48);
+                    console.log("!ctr! " + ctr);
+                    
+                    $('#span2').text(String(Math.floor(ctr / filecount1 * 100)) + '%');
+                    $('#process2').text(String(Math.floor(ctr / filecount1 * 100)) + '%');
+                    $('#process2').val(String(Math.floor(ctr / filecount1 * 100)));
+
+                    
+                    fs.writeFileSync(filename233, p.msg.slice(52, plen - 4).toString(), {
+                        flag: 'a'
+                    });
                 }
 
             }
@@ -646,6 +680,7 @@ document.getElementById('accept-btn').addEventListener('click', function () {
     var username = $('#user-name').text();
     common.accept_file(username, fileid);
     document.getElementById('sndFile').classList.remove('is-active');
+    document.getElementById('rcvFilePro').classList.add('is-active');
 })
 
 
