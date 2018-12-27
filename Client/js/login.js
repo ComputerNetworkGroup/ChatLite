@@ -126,6 +126,8 @@ window.client = new net.Socket();
 // var writeStream;
 var filename233;
 var filecount1;
+var file_snd_ctr = 0;
+var file_snd_total;
 
 
 
@@ -159,6 +161,8 @@ window.client.on('data', function (data) {
     BufLength = BufLength + data.length;
     var p = new common.Packet();
     var plen = 4;
+
+
     while (1) {
         console.log('BufLength:' + BufLength);
         if (BufLength >= 4) {
@@ -398,20 +402,32 @@ window.client.on('data', function (data) {
                     //对方拒绝
                     alert("The other party rejected your request to send");
                 }
+                else if (p.header[1] == 0x08 ){
+                    // 忽略回包
+                    file_snd_ctr++;
+                    $('#span1').text(String(Math.floor(file_snd_ctr / file_snd_total * 100)) + '%');
+                    $('#process1').text(String(Math.floor(file_snd_ctr / file_snd_total * 100)) + '%');
+                    $('#process1').val(String(Math.floor(file_snd_ctr / file_snd_total * 100)));
+                    
+                    if(file_snd_ctr == file_snd_total)
+                        document.getElementById('sndFilePro').classList.remove('is-active');
+                }
                 else {
                     //对方接受
+                    file_snd_ctr = 0;
 
                     var file = document.getElementById("file");
 
                     document.getElementById('sndFilePro').classList.add('is-active');
 
                     //传文件
+                    console.log("DEEP");
+                    console.log(file);
                     var readText = fs.readFileSync(file.files[0].path);
-                    console.log(typeof (readText));
                     var fileSize = readText.length;
                     const filePacketSize = 1024 * 2;
                     var fileCount = Math.ceil(fileSize / filePacketSize);
-
+                    file_snd_total = fileCount;
                     const readStream = fs.createReadStream(file.files[0].path, { highWaterMark: 2 * 1024 });
                     // readStream.setDefaultEncoding('utf8');
                     var ctr = 0;
@@ -422,14 +438,12 @@ window.client.on('data', function (data) {
                         console.log("ctr:" + ctr);
                         common.sndFile_middle($('p#user-chat-msg strong').text(), '1', ctr, data.length, String(data));
                         ctr++;
-                        $('#span1').text(String(Math.floor(ctr / fileCount * 100)) + '%');
-                        $('#process1').text(String(Math.floor(ctr / fileCount * 100)) + '%');
-                        $('#process1').val(String(Math.floor(ctr / fileCount * 100)));
-                        if (data.length < 2048) {
+                        
+                        if (data.length < 2048) {   // bug
                             common.fileend($('p#user-chat-msg strong').text());
                         }
                     });
-                    document.getElementById('sndFilePro').classList.remove('is-active');
+                    // document.getElementById('sndFilePro').classList.remove('is-active');
                     document.getElementById('filename').innerHTML = "Choose one file...";
                     document.getElementById('file').value = '';
                     document.getElementById('file').outerHTML = document.getElementById('file').outerHTML;
@@ -454,7 +468,8 @@ window.client.on('data', function (data) {
                     $('#process2').text(String(Math.floor(ctr / filecount1 * 100)) + '%');
                     $('#process2').val(String(Math.floor(ctr / filecount1 * 100)));
 
-                    
+        
+
                     fs.writeFileSync(filename233, p.msg.slice(52, plen - 4).toString(), {
                         flag: 'a'
                     });
@@ -674,13 +689,27 @@ function get_meshis() {
     $('#chat-box').empty();
 }
 
-//监听文件接受确认键
+
+
+
+
+// 监听文件接收键
 document.getElementById('accept-btn').addEventListener('click', function () {
     var fileid = $('#file-id').text();
     var username = $('#user-name').text();
-    common.accept_file(username, fileid);
-    document.getElementById('sndFile').classList.remove('is-active');
-    document.getElementById('rcvFilePro').classList.add('is-active');
+
+    if(fs.exists(filename233, function(exists){
+        if(exists){
+            // alert("进入文件保存选项窗口");
+            document.getElementById('saveFile').classList.add('is-active');
+        }
+        else{
+            common.accept_file(username, fileid);
+            document.getElementById('sndFile').classList.remove('is-active');
+            document.getElementById('rcvFilePro').classList.add('is-active');
+        }
+    }));
+
 })
 
 
@@ -692,6 +721,30 @@ document.getElementById('reject-btn').addEventListener('click', function () {
     document.getElementById('sndFile').classList.remove('is-active');
 })
 
+//监听文件覆盖键
+document.getElementById('cover-btn').addEventListener('click', function () {
+    var fileid = $('#file-id').text();
+    var username = $('#user-name').text();
+    fs.unlink(filename233, (err) => {
+        if (err)
+            throw err;
+        console.log('file delete');
+    });
+    document.getElementById('saveFile').classList.remove('is-active');
+    common.accept_file(username, fileid);
+    document.getElementById('sndFile').classList.remove('is-active');
+    document.getElementById('rcvFilePro').classList.add('is-active');
+})
+
+// 监听文件拒绝覆盖键
+document.getElementById('cover-refuse-btn').addEventListener('click', function () {
+    var fileid = $('#file-id').text();
+    var username = $('#user-name').text();
+    document.getElementById('saveFile').classList.remove('is-active');
+    common.reject_file(username, fileid);
+
+    document.getElementById('sndFile').classList.remove('is-active');
+})
 
 
 //监听config-submit按钮
@@ -736,6 +789,9 @@ document.getElementById('config-btn').addEventListener('click', function () {
         $('#error-msg2').append('<span style="color:red">Please Enter Your Personal Set!</span>');
     }
 })
+
+
+
 
 function Log_Out() {
     $('#cover').css('display', 'block');

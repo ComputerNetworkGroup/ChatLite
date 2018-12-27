@@ -6,7 +6,7 @@
     "PORT": 25880,
     "scripts": {
         "start": "electron .",
-        "pack": "electron-packager . myClient --win --out ../ChatLite --arch=x64 --ap-version=0.01 --electron-version=3.0.12"
+        "pack": "electron-packager . myClient --win --out ../ChatLite --arch=x64 --app-version=0.01 --electron-version=3.0.12"
     },
     "dependencies": {
         "js-cookie": "^2.2.0"
